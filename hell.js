@@ -80,7 +80,7 @@ const enemyKeys = Object.keys(enemyDatabase);
 let secretEnemy;
 let gameOver = false;
 let guessCount = 0;
-const MAX_GUESSES = 6;
+let MAX_GUESSES = 6;
 
 let guessedEnemiesList = [];
 
@@ -133,15 +133,20 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function initializeGameSession() {
+    // --- MODIFIER HOOK: Reset active modifiers and UI ---
+    if (typeof Modifiers !== "undefined") {
+        Modifiers.resetAll();
+    }
+
     secretEnemy = enemyDatabase[enemyKeys[Math.floor(Math.random() * enemyKeys.length)]];
     gameOver = false;
     isWaveClear = false;
     guessCount = 0;
+    MAX_GUESSES = 6;
     guessedEnemiesList = [];
 
     // Wave Indicator: Displays "Wave: Ultima" and applies custom red styling
     if (waveIndicator) {
-        // Reset specific wave modifier classes first
         waveIndicator.classList.remove("wave-hell", "wave-ultima");
 
         if (currentWave === 11) {
@@ -171,6 +176,11 @@ function initializeGameSession() {
 
     const tbody = document.getElementById("guessRows");
     if (tbody) tbody.innerHTML = "";
+
+    // --- MODIFIER HOOK: Apply modifier for the current wave ---
+    if (typeof Modifiers !== "undefined") {
+        Modifiers.evaluateWave(currentWave, "hell");
+    }
 }
 
 function advanceNextWave() {
@@ -193,6 +203,30 @@ function makeRandomGuess() {
     inputElement.value = enemyDatabase[randomKey].name;
     submitGuess();
 }
+
+// Expose makeRandomGuess globally so modifiers (like Jammed Radar) can call it
+window.makeRandomGuess = makeRandomGuess;
+
+// Expose timeout handler globally for Modifiers.js
+window.handleTimerTimeout = function() {
+    if (gameOver || isWaveClear) return;
+
+    const messageElement = document.getElementById("gameMessage");
+    if (messageElement) {
+        messageElement.innerText = `DETECTED BY SECURITY PROTOCOL! Out of time. Target was: ${secretEnemy.name}.`;
+        messageElement.style.color = "#ff3333";
+    }
+
+    gameOver = true;
+    if (inputElement) inputElement.disabled = true;
+    if (submitButton) submitButton.disabled = true;
+
+    if (continueButton) {
+        continueButton.innerText = "Restart from Wave 1";
+        continueButton.style.display = "inline-block";
+        continueButton.onclick = resetToWaveOne;
+    }
+};
 
 function showFilteredOptions() {
     if (gameOver || isWaveClear || !dropdownMenu || !inputElement) return;
@@ -259,7 +293,7 @@ function submitGuess() {
 
     function createNameCell(guessedEnemy, targetEnemy) {
         const td = document.createElement("td");
-        td.className = "name-cell";
+        td.className = "name-cell cell-name";
 
         const wrapper = document.createElement("div");
         wrapper.className = "name-cell-wrapper";
@@ -287,8 +321,9 @@ function submitGuess() {
         return td;
     }
 
-    function createCell(guessedValue, targetValue, displayString) {
+    function createCell(guessedValue, targetValue, displayString, extraClass = "") {
         const td = document.createElement("td");
+        if (extraClass) td.classList.add(extraClass);
         td.innerText = displayString;
 
         if (guessedValue === targetValue) {
@@ -299,8 +334,9 @@ function submitGuess() {
         return td;
     }
 
-    function createNumericCell(guessedValue, targetValue, threshold) {
+    function createNumericCell(guessedValue, targetValue, threshold, extraClass = "") {
         const td = document.createElement("td");
+        if (extraClass) td.classList.add(extraClass);
 
         if (guessedValue === targetValue) {
             td.innerText = guessedValue;
@@ -319,8 +355,9 @@ function submitGuess() {
         return td;
     }
 
-    function createEncounterCell(guessedEncounter, targetEncounter, threshold) {
+    function createEncounterCell(guessedEncounter, targetEncounter, threshold, extraClass = "") {
         const td = document.createElement("td");
+        if (extraClass) td.classList.add(extraClass);
 
         const lowerCaseOrder = encounterOrder.map(item => item.toLowerCase());
         const guessedIndex = lowerCaseOrder.indexOf(guessedEncounter.toLowerCase());
@@ -344,14 +381,24 @@ function submitGuess() {
     }
 
     row.appendChild(createNameCell(guessedEnemy, secretEnemy));
-    row.appendChild(createCell(guessedEnemy.type, secretEnemy.type, guessedEnemy.type));
-    row.appendChild(createNumericCell(guessedEnemy.health, secretEnemy.health, 50));
-    row.appendChild(createNumericCell(guessedEnemy.waves, secretEnemy.waves, 6));
-    row.appendChild(createEncounterCell(guessedEnemy.encounter, secretEnemy.encounter, 2));
+    row.appendChild(createCell(guessedEnemy.type, secretEnemy.type, guessedEnemy.type, "cell-type"));
+    row.appendChild(createNumericCell(guessedEnemy.health, secretEnemy.health, 50, "cell-health"));
+    row.appendChild(createNumericCell(guessedEnemy.waves, secretEnemy.waves, 6, "cell-waves"));
+    row.appendChild(createEncounterCell(guessedEnemy.encounter, secretEnemy.encounter, 2, "cell-encounter"));
+
+    // --- MODIFIER HOOK: Allow modifiers to adjust or conceal cells before rendering ---
+    if (typeof Modifiers !== "undefined") {
+        Modifiers.onGuess(row, guessedEnemy, secretEnemy);
+    }
 
     if (tbody) tbody.insertBefore(row, tbody.firstChild);
     inputElement.value = "";
     if (dropdownMenu) dropdownMenu.style.display = "none";
+
+    // --- MODIFIER HOOK: Execute post-guess logic ---
+    if (typeof Modifiers !== "undefined") {
+        Modifiers.afterGuess();
+    }
 
     // Victory Check
     if (guessedEnemy.name === secretEnemy.name) {

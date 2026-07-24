@@ -508,3 +508,77 @@ td.name-cell {
     color: #ff3333;
     text-shadow: 0 0 12px rgba(255, 0, 0, 0.6);
 }
+
+.modifiers-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    margin: 0.8rem auto 1.2rem auto;
+    padding: 0.5rem 1rem;
+    background: rgba(20, 0, 0, 0.6);
+    border: 1px solid rgba(255, 0, 55, 0.4);
+    border-radius: 6px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 0 15px rgba(255, 0, 55, 0.15);
+}
+
+.modifiers-label {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #ff4455;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-shadow: 0 0 6px rgba(255, 0, 55, 0.4);
+}
+
+.modifiers-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.modifier-tag {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: rgba(255, 0, 55, 0.2);
+    border: 1px solid #ff0037;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    box-shadow: 0 0 8px rgba(255, 0, 55, 0.3);
+    animation: modifierGlow 2s infinite alternate;
+}
+
+.modifier-tag.jammed-radar {
+  background-color: rgba(180, 20, 40, 0.3);
+  color: #ffcccc;
+  border: 1px solid #ff3355;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(255, 0, 55, 0.3);
+}
+
+.modifier-tag.cloaked {
+    background-color: rgba(180, 20, 40, 0.3);
+    color: #ffcccc;
+    border: 1px solid #ff3355;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(255, 0, 55, 0.3);
+}
+
+.modifier-tag.security-protocol {
+    background-color: rgba(180, 20, 40, 0.3);
+    color: #ffcccc;
+    border: 1px solid #ff3355;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(255, 0, 55, 0.3);
+    animation: alertPulse 1s infinite alternate;
+}

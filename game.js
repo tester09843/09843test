@@ -133,6 +133,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function initializeGameSession() {
+    // 1. Reset modifiers from previous round
+    if (typeof Modifiers !== "undefined") {
+        Modifiers.resetAll();
+    }
+
     secretEnemy = enemyDatabase[enemyKeys[Math.floor(Math.random() * enemyKeys.length)]];
     gameOver = false;
     isWaveClear = false;
@@ -159,6 +164,11 @@ function initializeGameSession() {
 
     const tbody = document.getElementById("guessRows");
     if (tbody) tbody.innerHTML = "";
+
+    // 2. Evaluate modifiers specifically for classic mode
+    if (typeof Modifiers !== "undefined") {
+        Modifiers.evaluateWave(currentWave, "classic");
+    }
 }
 
 function advanceNextWave() {
@@ -181,6 +191,9 @@ function makeRandomGuess() {
     inputElement.value = enemyDatabase[randomKey].name;
     submitGuess();
 }
+
+// Expose makeRandomGuess globally so modifiers (like Jammed Radar) can call it
+window.makeRandomGuess = makeRandomGuess;
 
 function showFilteredOptions() {
     if (gameOver || isWaveClear || !dropdownMenu || !inputElement) return;
@@ -246,37 +259,38 @@ function submitGuess() {
     const row = document.createElement("tr");
 
     function createNameCell(guessedEnemy, targetEnemy) {
-    const td = document.createElement("td");
-    td.className = "name-cell";
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "name-cell-wrapper";
-
-    const img = document.createElement("img");
-    const key = guessedEnemy.name.toLowerCase();
-    img.src = `images/enemies/${key.replace(/\s+/g, '-')}.png`;
-    img.alt = guessedEnemy.name;
-    img.className = "table-enemy-icon";
-
-    img.onerror = function() { this.style.display = "none"; };
-
-    const textSpan = document.createElement("span");
-    textSpan.innerText = guessedEnemy.name;
-
-    wrapper.appendChild(img);
-    wrapper.appendChild(textSpan);
-    td.appendChild(wrapper);
-
-    if (guessedEnemy.name === targetEnemy.name) {
-        td.classList.add("cell-correct");
-    } else {
-        td.classList.add("cell-incorrect");
-    }
-    return td;
-}
-
-    function createCell(guessedValue, targetValue, displayString) {
         const td = document.createElement("td");
+        td.className = "name-cell cell-name";
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "name-cell-wrapper";
+
+        const img = document.createElement("img");
+        const key = guessedEnemy.name.toLowerCase();
+        img.src = `images/enemies/${key.replace(/\s+/g, '-')}.png`;
+        img.alt = guessedEnemy.name;
+        img.className = "table-enemy-icon";
+
+        img.onerror = function() { this.style.display = "none"; };
+
+        const textSpan = document.createElement("span");
+        textSpan.innerText = guessedEnemy.name;
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(textSpan);
+        td.appendChild(wrapper);
+
+        if (guessedEnemy.name === targetEnemy.name) {
+            td.classList.add("cell-correct");
+        } else {
+            td.classList.add("cell-incorrect");
+        }
+        return td;
+    }
+
+    function createCell(guessedValue, targetValue, displayString, extraClass = "") {
+        const td = document.createElement("td");
+        if (extraClass) td.classList.add(extraClass);
         td.innerText = displayString;
 
         if (guessedValue === targetValue) {
@@ -287,8 +301,9 @@ function submitGuess() {
         return td;
     }
 
-    function createNumericCell(guessedValue, targetValue, threshold) {
+    function createNumericCell(guessedValue, targetValue, threshold, extraClass = "") {
         const td = document.createElement("td");
+        if (extraClass) td.classList.add(extraClass);
 
         if (guessedValue === targetValue) {
             td.innerText = guessedValue;
@@ -307,8 +322,9 @@ function submitGuess() {
         return td;
     }
 
-    function createEncounterCell(guessedEncounter, targetEncounter, threshold) {
+    function createEncounterCell(guessedEncounter, targetEncounter, threshold, extraClass = "") {
         const td = document.createElement("td");
+        if (extraClass) td.classList.add(extraClass);
 
         const lowerCaseOrder = encounterOrder.map(item => item.toLowerCase());
         const guessedIndex = lowerCaseOrder.indexOf(guessedEncounter.toLowerCase());
@@ -331,13 +347,25 @@ function submitGuess() {
         return td;
     }
 
+    // Build row cells with identifying classes
     row.appendChild(createNameCell(guessedEnemy, secretEnemy));
-    row.appendChild(createCell(guessedEnemy.type, secretEnemy.type, guessedEnemy.type));
-    row.appendChild(createNumericCell(guessedEnemy.health, secretEnemy.health, 50));
-    row.appendChild(createNumericCell(guessedEnemy.waves, secretEnemy.waves, 6));
-    row.appendChild(createEncounterCell(guessedEnemy.encounter, secretEnemy.encounter, 2));
+    row.appendChild(createCell(guessedEnemy.type, secretEnemy.type, guessedEnemy.type, "cell-type"));
+    row.appendChild(createNumericCell(guessedEnemy.health, secretEnemy.health, 50, "cell-health"));
+    row.appendChild(createNumericCell(guessedEnemy.waves, secretEnemy.waves, 6, "cell-waves"));
+    row.appendChild(createEncounterCell(guessedEnemy.encounter, secretEnemy.encounter, 2, "cell-encounter"));
+
+    // 3. Hook before appending row
+    if (typeof Modifiers !== "undefined") {
+        Modifiers.onGuess(row, guessedEnemy, secretEnemy);
+    }
 
     if (tbody) tbody.insertBefore(row, tbody.firstChild);
+
+    // 4. Hook after row is appended
+    if (typeof Modifiers !== "undefined") {
+        Modifiers.afterGuess();
+    }
+
     inputElement.value = "";
     if (dropdownMenu) dropdownMenu.style.display = "none";
 

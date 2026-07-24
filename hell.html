@@ -28,6 +28,13 @@
       <button class="menu-btn submit-btn" onclick="submitGuess()">Guess</button>
   </div>
 
+  <div class="modifiers-container">
+      <span class="modifiers-label">MODIFIERS:</span>
+      <div id="modifiersList" class="modifiers-list">
+          <span class="modifier-tag">None</span>
+      </div>
+  </div>
+
         <div class="action-panel">
             <button id="continueButton" class="menu-btn continue-btn" style="display: none;" onclick="advanceNextWave()">Continue</button>
         </div>
@@ -49,6 +56,8 @@
         </table>
     </div>
 
+    <script src="modifiers.js"></script>
     <script src="hell.js"></script>
+    
 </body>
 </html>
