@@ -139,12 +139,17 @@ function initializeGameSession() {
     guessCount = 0;
     guessedEnemiesList = [];
 
-    // Wave Indicator: Displays "Wave: Ultima" for Wave 11
+    // Wave Indicator: Displays "Wave: Ultima" and applies custom red styling
     if (waveIndicator) {
+        // Reset specific wave modifier classes first
+        waveIndicator.classList.remove("wave-hell", "wave-ultima");
+
         if (currentWave === 11) {
             waveIndicator.innerText = "Wave: Ultima";
+            waveIndicator.classList.add("wave-ultima");
         } else {
             waveIndicator.innerText = `Wave: ${currentWave}`;
+            waveIndicator.classList.add("wave-hell");
         }
     }
 
