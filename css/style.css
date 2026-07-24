@@ -481,3 +481,10 @@ td.name-cell {
     color: #ffffff;
     box-shadow: 0 0 12px rgba(88, 101, 242, 0.6);
 }
+
+.menu-btn.hell-btn:hover {
+  background-color: #ff0000;
+  border-color: #ff0000;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 0, 0, 0.8);
+}

@@ -139,7 +139,14 @@ function initializeGameSession() {
     guessCount = 0;
     guessedEnemiesList = [];
 
-    if (waveIndicator) waveIndicator.innerText = `Wave: ${currentWave}`;
+    // Wave Indicator: Displays "Wave: Ultima" for Wave 11
+    if (waveIndicator) {
+        if (currentWave === 11) {
+            waveIndicator.innerText = "Wave: Ultima";
+        } else {
+            waveIndicator.innerText = `Wave: ${currentWave}`;
+        }
+    }
 
     if (continueButton) {
         continueButton.innerText = "Continue";
@@ -246,34 +253,34 @@ function submitGuess() {
     const row = document.createElement("tr");
 
     function createNameCell(guessedEnemy, targetEnemy) {
-    const td = document.createElement("td");
-    td.className = "name-cell";
+        const td = document.createElement("td");
+        td.className = "name-cell";
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "name-cell-wrapper";
+        const wrapper = document.createElement("div");
+        wrapper.className = "name-cell-wrapper";
 
-    const img = document.createElement("img");
-    const key = guessedEnemy.name.toLowerCase();
-    img.src = `images/enemies/${key.replace(/\s+/g, '-')}.png`;
-    img.alt = guessedEnemy.name;
-    img.className = "table-enemy-icon";
+        const img = document.createElement("img");
+        const key = guessedEnemy.name.toLowerCase();
+        img.src = `images/enemies/${key.replace(/\s+/g, '-')}.png`;
+        img.alt = guessedEnemy.name;
+        img.className = "table-enemy-icon";
 
-    img.onerror = function() { this.style.display = "none"; };
+        img.onerror = function() { this.style.display = "none"; };
 
-    const textSpan = document.createElement("span");
-    textSpan.innerText = guessedEnemy.name;
+        const textSpan = document.createElement("span");
+        textSpan.innerText = guessedEnemy.name;
 
-    wrapper.appendChild(img);
-    wrapper.appendChild(textSpan);
-    td.appendChild(wrapper);
+        wrapper.appendChild(img);
+        wrapper.appendChild(textSpan);
+        td.appendChild(wrapper);
 
-    if (guessedEnemy.name === targetEnemy.name) {
-        td.classList.add("cell-correct");
-    } else {
-        td.classList.add("cell-incorrect");
+        if (guessedEnemy.name === targetEnemy.name) {
+            td.classList.add("cell-correct");
+        } else {
+            td.classList.add("cell-incorrect");
+        }
+        return td;
     }
-    return td;
-}
 
     function createCell(guessedValue, targetValue, displayString) {
         const td = document.createElement("td");
@@ -341,26 +348,43 @@ function submitGuess() {
     inputElement.value = "";
     if (dropdownMenu) dropdownMenu.style.display = "none";
 
+    // Victory Check
     if (guessedEnemy.name === secretEnemy.name) {
-        if (messageElement) {
-            messageElement.innerText = `SUCCESS! The target was ${secretEnemy.name}! Wave ${currentWave} Complete!`;
-            messageElement.style.color = "#00ffcc";
-        }
         isWaveClear = true;
         inputElement.disabled = true;
         if (submitButton) submitButton.disabled = true;
 
-        if (continueButton) {
-            continueButton.innerText = "Continue";
-            continueButton.onclick = advanceNextWave;
-            continueButton.style.display = "inline-block";
+        if (currentWave === 11) {
+            // Wave 11 / Wave Ultima Victory
+            if (messageElement) {
+                messageElement.innerText = `GG!`;
+                messageElement.style.color = "#00ffcc";
+            }
+            if (continueButton) {
+                continueButton.innerText = "Play Again";
+                continueButton.onclick = resetToWaveOne;
+                continueButton.style.display = "inline-block";
+            }
+        } else {
+            // Waves 1 - 10 Victory
+            if (messageElement) {
+                messageElement.innerText = `SUCCESS! The target was ${secretEnemy.name}! Wave ${currentWave} Complete!`;
+                messageElement.style.color = "#00ffcc";
+            }
+            if (continueButton) {
+                continueButton.innerText = "Continue";
+                continueButton.onclick = advanceNextWave;
+                continueButton.style.display = "inline-block";
+            }
         }
         return;
     }
 
+    // Game Over / Out of Guesses Check
     if (guessCount >= MAX_GUESSES) {
+        const displayWave = currentWave === 11 ? "Ultima" : currentWave;
         if (messageElement) {
-            messageElement.innerText = `Out of guesses. Target was: ${secretEnemy.name}. You reached Wave ${currentWave} before failing.`;
+            messageElement.innerText = `Out of guesses. Target was: ${secretEnemy.name}. You reached Wave ${displayWave} before failing.`;
             messageElement.style.color = "#ff3333";
         }
         gameOver = true;
