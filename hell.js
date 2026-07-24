@@ -76,6 +76,9 @@ const encounterOrder = [
     "Wave 10 mastermind", "Wave 1 epilogue", "Wave 2 epilogue", "Wave 3 epilogue", "Wave 10 hell", "sandbox"
 ];
 
+// Expose so modifiers (like Miscommunication) can shift the First Encounter value
+window.encounterOrder = encounterOrder;
+
 const enemyKeys = Object.keys(enemyDatabase);
 let secretEnemy;
 let gameOver = false;
@@ -206,6 +209,11 @@ function makeRandomGuess() {
 
 // Expose makeRandomGuess globally so modifiers (like Jammed Radar) can call it
 window.makeRandomGuess = makeRandomGuess;
+
+// Expose a setter so modifiers (like Weakened Signal) can adjust the guess limit
+window.setMaxGuesses = function(n) {
+    MAX_GUESSES = n;
+};
 
 // Expose timeout handler globally for Modifiers.js
 window.handleTimerTimeout = function() {

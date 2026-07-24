@@ -76,11 +76,14 @@ const encounterOrder = [
     "Wave 10 mastermind", "Wave 1 epilogue", "Wave 2 epilogue", "Wave 3 epilogue", "Wave 10 hell", "sandbox"
 ];
 
+// Expose so modifiers (like Miscommunication) can shift the First Encounter value
+window.encounterOrder = encounterOrder;
+
 const enemyKeys = Object.keys(enemyDatabase);
 let secretEnemy;
 let gameOver = false;
 let guessCount = 0;
-const MAX_GUESSES = 6;
+let MAX_GUESSES = 6;
 
 let guessedEnemiesList = [];
 
@@ -133,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function initializeGameSession() {
-    // 1. Reset modifiers from previous round
+  MAX_GUESSES = 6;
     if (typeof Modifiers !== "undefined") {
         Modifiers.resetAll();
     }
@@ -165,7 +168,6 @@ function initializeGameSession() {
     const tbody = document.getElementById("guessRows");
     if (tbody) tbody.innerHTML = "";
 
-    // 2. Evaluate modifiers specifically for classic mode
     if (typeof Modifiers !== "undefined") {
         Modifiers.evaluateWave(currentWave, "classic");
     }
@@ -192,8 +194,33 @@ function makeRandomGuess() {
     submitGuess();
 }
 
-// Expose makeRandomGuess globally so modifiers (like Jammed Radar) can call it
 window.makeRandomGuess = makeRandomGuess;
+
+// Expose a setter so modifiers (like Weakened Signal) can adjust the guess limit
+window.setMaxGuesses = function(n) {
+    MAX_GUESSES = n;
+};
+
+// Expose timeout handler globally for Modifiers.js
+window.handleTimerTimeout = function() {
+    if (gameOver || isWaveClear) return;
+
+    const messageElement = document.getElementById("gameMessage");
+    if (messageElement) {
+        messageElement.innerText = `DETECTED BY SECURITY PROTOCOL! Out of time. Target was: ${secretEnemy.name}.`;
+        messageElement.style.color = "#ff3333";
+    }
+
+    gameOver = true;
+    if (inputElement) inputElement.disabled = true;
+    if (submitButton) submitButton.disabled = true;
+
+    if (continueButton) {
+        continueButton.innerText = "Restart from Wave 1";
+        continueButton.style.display = "inline-block";
+        continueButton.onclick = resetToWaveOne;
+    }
+};
 
 function showFilteredOptions() {
     if (gameOver || isWaveClear || !dropdownMenu || !inputElement) return;
