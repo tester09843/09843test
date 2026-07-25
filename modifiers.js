@@ -48,21 +48,22 @@ class ModifierEngine {
         const targetCount = this.waveCounts[waveNumber] ?? 1;
         let pool = Object.keys(this.definitions);
 
-        // Vitarage buffs another active modifier, so it can never be the sole
-        // modifier selected for a wave — exclude it when only 1 slot is available.
         if (targetCount <= 1) {
             pool = pool.filter(key => key !== "vitarage");
         }
 
         const selectedKeys = [];
+
+        if (this.forceVitarage && targetCount >= 2 && this.definitions.vitarage) {
+            selectedKeys.push("vitarage");
+            pool = pool.filter(key => key !== "vitarage");
+        }
+
         while (selectedKeys.length < targetCount && pool.length > 0) {
             const randomIndex = Math.floor(Math.random() * pool.length);
             selectedKeys.push(pool.splice(randomIndex, 1)[0]);
         }
 
-        // Pass 1: activate every modifier for this wave before any of them can act.
-        // This ensures a modifier whose onStart triggers a guess (e.g. Jammed Radar)
-        // can never fire before another modifier (e.g. Cloaked) is active.
         selectedKeys.forEach(key => {
             const def = this.definitions[key];
             if (def && !this.active.has(key)) {
@@ -71,11 +72,16 @@ class ModifierEngine {
         });
         this.renderBadges();
 
-        // Pass 2: now that all modifiers for this wave are active, run their onStart hooks.
-        selectedKeys.forEach(key => {
+        // vitarage must resolve buffedModifier before any other onStart runs,
+        // otherwise the buffed modifier can't tell it's been buffed yet.
+        const orderedKeys = selectedKeys.includes("vitarage")
+            ? ["vitarage", ...selectedKeys.filter(key => key !== "vitarage")]
+            : selectedKeys;
+
+        orderedKeys.forEach(key => {
             const def = this.definitions[key];
             if (def && def.onStart) {
-                def.onStart(this);
+                def.onStart(this, key);
             }
         });
     }
@@ -84,7 +90,7 @@ class ModifierEngine {
         const def = this.definitions[key];
         if (def && !this.active.has(key)) {
             this.active.add(key);
-            if (def.onStart) def.onStart(this);
+            if (def.onStart) def.onStart(this, key);
             this.renderBadges();
         }
     }
@@ -92,7 +98,7 @@ class ModifierEngine {
     onGuess(row, guessedEnemy, secretEnemy) {
         this.active.forEach(key => {
             if (this.definitions[key]?.onGuess) {
-                this.definitions[key].onGuess(row, guessedEnemy, secretEnemy);
+                this.definitions[key].onGuess(row, guessedEnemy, secretEnemy, this, key);
             }
         });
 
@@ -104,7 +110,7 @@ class ModifierEngine {
     afterGuess() {
         this.active.forEach(key => {
             if (this.definitions[key]?.afterGuess) {
-                this.definitions[key].afterGuess();
+                this.definitions[key].afterGuess(this, key);
             }
         });
     }
@@ -140,10 +146,8 @@ class ModifierEngine {
                 tag.className = `modifier-tag ${classKey}`;
                 if (key === this.buffedModifier) {
                     tag.classList.add("modifier-buffed");
-                    tag.innerText = `⚡ ${def.name}`;
-                } else {
-                    tag.innerText = def.name;
                 }
+                tag.innerText = def.name;
                 listContainer.appendChild(tag);
             }
         });

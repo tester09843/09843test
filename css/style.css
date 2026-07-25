@@ -654,12 +654,8 @@ tr.row-vitacharged td.cell-name {
     box-shadow: 0 0 10px rgba(255, 0, 55, 0.3);
 }
 
-.cell-assassin-close {
-    background-color: #0a0a0a !important;
-    color: #ffffff !important;
-    font-weight: 800;
-    border: 1px solid #333333 !important;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8) inset;
+.cell-assassin-warning {
+    box-shadow: 0 0 0 2px #ff9900 inset;
 }
 
 .modifier-tag.vitarage {
@@ -673,8 +669,11 @@ tr.row-vitacharged td.cell-name {
 }
 
 .modifier-tag.modifier-buffed {
-    background-color: rgba(102, 0, 204, 0.3) !important;
-    color: #e0ccff !important;
-    border: 2px solid #b266ff !important;
-    box-shadow: 0 0 14px rgba(178, 102, 255, 0.8) !important;
+    background-color: rgba(102, 0, 204, 0.3);
+    color: #e0ccff;
+    border: 1px solid #b266ff;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(178, 102, 255, 0.4);
 }

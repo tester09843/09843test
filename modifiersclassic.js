@@ -1,31 +1,51 @@
-// Tracks which enemy keys are secretly vitacharged for the current wave (Vitacharge modifier)
 let vitachargedEnemies = new Set();
 
-// Tracks the current wave's assassin enemy (Assassin modifier)
 let currentAssassin = null;
 
 const classicDefinitions = {
     cloaked: {
         name: "Cloaked",
-        description: "Hides the Type column.",
-        onStart: () => {
+        description: "Hides the Type column. Vitaraged: also strips the arrow from one fixed stat category all wave.",
+        onStart: (engine, key) => {
             const typeHeader = document.querySelector("#guessTable th:nth-child(2)");
             if (typeHeader) typeHeader.style.display = "none";
+
+            if (engine) {
+                if (engine.buffedModifier === key) {
+                    const categories = ["cell-health", "cell-waves", "cell-encounter"];
+                    engine.cloakedTargetCategory = categories[Math.floor(Math.random() * categories.length)];
+                } else {
+                    engine.cloakedTargetCategory = null;
+                }
+            }
         },
-        onGuess: (row) => {
+        onGuess: (row, guessedEnemy, secretEnemy, engine) => {
             const typeCell = row.querySelector(".cell-type") || row.children[1];
             if (typeCell) typeCell.remove();
+
+            if (engine && engine.cloakedTargetCategory) {
+                const targetCell = row.querySelector(`.${engine.cloakedTargetCategory}`);
+                if (targetCell && !targetCell.classList.contains("cell-correct")) {
+                    targetCell.innerText = targetCell.innerText.replace(/ [\u2191\u2193\u2192\u2190]$/, "");
+                }
+            }
         },
-        onReset: () => {
+        onReset: (engine) => {
             const typeHeader = document.querySelector("#guessTable th:nth-child(2)");
             if (typeHeader) typeHeader.style.display = "";
+            if (engine) engine.cloakedTargetCategory = null;
         }
     },
     jammedRadar: {
         name: "Jammed Radar",
-        description: "Automatically submits a random guess on wave start.",
-        onStart: () => {
-            if (typeof window.makeRandomGuess === "function") {
+        description: "Automatically submits a random guess on wave start. Vitaraged: submits 2 random guesses that are guaranteed wrong.",
+        onStart: (engine, key) => {
+            if (engine && engine.buffedModifier === key) {
+                if (typeof window.makeRandomWrongGuess === "function") {
+                    window.makeRandomWrongGuess();
+                    window.makeRandomWrongGuess();
+                }
+            } else if (typeof window.makeRandomGuess === "function") {
                 window.makeRandomGuess();
             }
         },
@@ -43,12 +63,13 @@ const classicDefinitions = {
     },
     fog: {
         name: "Fog",
-        description: "Only your 2 most recent guesses are visible.",
-        afterGuess: () => {
+        description: "Only your 2 most recent guesses are visible. Vitaraged: only your most recent guess is visible.",
+        afterGuess: (engine, key) => {
             const tbody = document.getElementById("guessRows");
             if (!tbody) return;
+            const visibleCount = engine && engine.buffedModifier === key ? 1 : 2;
             Array.from(tbody.children).forEach((row, index) => {
-                row.style.display = index < 2 ? "" : "none";
+                row.style.display = index < visibleCount ? "" : "none";
             });
         },
         onReset: () => {
@@ -61,31 +82,48 @@ const classicDefinitions = {
     },
     sabotage: {
         name: "Sabotage",
-        description: "One non-correct arrow (Health, Total Waves, or First Encounter) is always flipped to point the wrong way.",
-        onGuess: (row) => {
+        description: "One non-correct arrow (Health, Total Waves, or First Encounter) is always flipped to point the wrong way. Vitaraged: 2 independent picks are flipped - hitting the same category twice cancels it back to normal.",
+        onGuess: (row, guessedEnemy, secretEnemy, engine, key) => {
             const flipPairs = [["↑", "↓"], ["↓", "↑"], ["→", "←"], ["←", "→"]];
 
-            const candidates = ["cell-health", "cell-waves", "cell-encounter"]
-                .map(cls => row.querySelector(`.${cls}`))
-                .filter(cell => cell && !cell.classList.contains("cell-correct"));
+            // Correctness is checked against the real data, not the cell's current
+            // DOM classes, so a genuinely correct stat can never be flipped here.
+            const fieldChecks = [
+                { cls: "cell-health", isCorrect: guessedEnemy.health === secretEnemy.health },
+                { cls: "cell-waves", isCorrect: guessedEnemy.waves === secretEnemy.waves },
+                { cls: "cell-encounter", isCorrect: guessedEnemy.encounter.toLowerCase() === secretEnemy.encounter.toLowerCase() }
+            ];
 
-            if (candidates.length === 0) return;
+            const candidates = fieldChecks
+                .filter(field => !field.isCorrect)
+                .map(field => row.querySelector(`.${field.cls}`))
+                .filter(Boolean);
 
-            const target = candidates[Math.floor(Math.random() * candidates.length)];
-            for (const [from, to] of flipPairs) {
-                if (target.innerText.includes(from)) {
-                    target.innerText = target.innerText.replace(from, to);
-                    break;
+            const flipOnce = () => {
+                if (candidates.length === 0) return;
+
+                const target = candidates[Math.floor(Math.random() * candidates.length)];
+                for (const [from, to] of flipPairs) {
+                    if (target.innerText.includes(from)) {
+                        target.innerText = target.innerText.replace(from, to);
+                        break;
+                    }
                 }
+            };
+
+            flipOnce();
+            if (engine && engine.buffedModifier === key) {
+                flipOnce();
             }
         }
     },
     weakenedSignal: {
         name: "Weakened Signal",
-        description: "You only have 5 guesses instead of 6.",
-        onStart: () => {
+        description: "You only have 5 guesses instead of 6. Vitaraged: only 4 guesses instead of 6.",
+        onStart: (engine, key) => {
+            const buffed = engine && engine.buffedModifier === key;
             if (typeof window.setMaxGuesses === "function") {
-                window.setMaxGuesses(5);
+                window.setMaxGuesses(buffed ? 4 : 5);
             }
         },
         onReset: () => {
@@ -96,11 +134,20 @@ const classicDefinitions = {
     },
     miscommunication: {
         name: "Miscommunication",
-        description: "A non-correct stat (Health, Total Waves, or First Encounter) may display the wrong value.",
-        onGuess: (row, guessedEnemy) => {
-            const candidates = ["cell-health", "cell-waves", "cell-encounter"]
-                .map(cls => row.querySelector(`.${cls}`))
-                .filter(cell => cell && !cell.classList.contains("cell-correct"));
+        description: "A non-correct stat (Health, Total Waves, or First Encounter) may display the wrong value. Vitaraged: its color is also displayed wrong, independent of the real value.",
+        onGuess: (row, guessedEnemy, secretEnemy, engine, key) => {
+            // Correctness is checked against the real data, not the cell's current
+            // DOM classes, so a genuinely correct stat can never be touched here.
+            const fieldChecks = [
+                { cls: "cell-health", isCorrect: guessedEnemy.health === secretEnemy.health },
+                { cls: "cell-waves", isCorrect: guessedEnemy.waves === secretEnemy.waves },
+                { cls: "cell-encounter", isCorrect: guessedEnemy.encounter.toLowerCase() === secretEnemy.encounter.toLowerCase() }
+            ];
+
+            const candidates = fieldChecks
+                .filter(field => !field.isCorrect)
+                .map(field => row.querySelector(`.${field.cls}`))
+                .filter(Boolean);
 
             if (candidates.length === 0) return;
 
@@ -122,16 +169,26 @@ const classicDefinitions = {
                     target.innerText = `${order[newIdx]}${arrowSuffix}`;
                 }
             }
+
+            if (engine && engine.buffedModifier === key) {
+                target.classList.remove("cell-correct", "cell-incorrect", "cell-partial");
+                const fakeColors = ["cell-correct", "cell-incorrect", "cell-partial"];
+                target.classList.add(fakeColors[Math.floor(Math.random() * fakeColors.length)]);
+            }
         }
     },
     vitacharge: {
         name: "Vitacharge",
-        description: "2 enemies you guessed in the previous 2 waves are secretly vitacharged this wave. Guess one and every stat but its name goes blank and gold.",
-        onStart: () => {
+        description: "2 enemies you guessed in the previous 2 waves are secretly vitacharged this wave. Guess one and every stat but its name goes blank and gold. Vitaraged: 6 enemies from the previous 4 waves instead.",
+        onStart: (engine, key) => {
             vitachargedEnemies = new Set();
+            const buffed = engine && engine.buffedModifier === key;
+            const waveSpan = buffed ? 4 : 2;
+            const targetCount = buffed ? 6 : 2;
+
             if (typeof window.getPreviousWaveGuesses === "function") {
-                const pool = [...new Set(window.getPreviousWaveGuesses(2))];
-                while (vitachargedEnemies.size < 2 && pool.length > 0) {
+                const pool = [...new Set(window.getPreviousWaveGuesses(waveSpan))];
+                while (vitachargedEnemies.size < targetCount && pool.length > 0) {
                     const randomIndex = Math.floor(Math.random() * pool.length);
                     vitachargedEnemies.add(pool.splice(randomIndex, 1)[0]);
                 }
@@ -154,18 +211,27 @@ const classicDefinitions = {
     },
     assassin: {
         name: "Assassin",
-        description: "A random enemy is secretly the assassin this wave. Guessing it fails you instantly. Stats close to the assassin are colored black instead of yellow.",
-        onStart: () => {
+        description: "A random enemy is secretly the assassin this wave. Guessing it fails you instantly. Stats close to the assassin get a warning icon next to their arrow, colors stay unchanged. Vitaraged: only 1 fixed stat category can trigger the warning all wave.",
+        onStart: (engine, key) => {
             currentAssassin = null;
             const db = window.enemyDatabase || {};
             const secret = typeof window.getSecretEnemy === "function" ? window.getSecretEnemy() : null;
-            const pool = Object.keys(db).filter(key => !secret || db[key].name !== secret.name);
+            const pool = Object.keys(db).filter(dbKey => !secret || db[dbKey].name !== secret.name);
             if (pool.length > 0) {
                 const randomKey = pool[Math.floor(Math.random() * pool.length)];
                 currentAssassin = db[randomKey];
             }
+
+            if (engine) {
+                if (engine.buffedModifier === key) {
+                    const categories = ["cell-health", "cell-waves", "cell-encounter"];
+                    engine.assassinTargetCategory = categories[Math.floor(Math.random() * categories.length)];
+                } else {
+                    engine.assassinTargetCategory = null;
+                }
+            }
         },
-        onGuess: (row, guessedEnemy) => {
+        onGuess: (row, guessedEnemy, secretEnemy, engine) => {
             if (!currentAssassin) return;
 
             const order = window.encounterOrder || [];
@@ -173,7 +239,7 @@ const classicDefinitions = {
             const guessedEncounterIdx = lowerOrder.indexOf(guessedEnemy.encounter.toLowerCase());
             const assassinEncounterIdx = lowerOrder.indexOf(currentAssassin.encounter.toLowerCase());
 
-            const checks = [
+            let checks = [
                 { cls: "cell-health", close: Math.abs(guessedEnemy.health - currentAssassin.health) <= 50 },
                 { cls: "cell-waves", close: Math.abs(guessedEnemy.waves - currentAssassin.waves) <= 6 },
                 {
@@ -183,12 +249,16 @@ const classicDefinitions = {
                 }
             ];
 
+            if (engine && engine.assassinTargetCategory) {
+                checks = checks.filter(check => check.cls === engine.assassinTargetCategory);
+            }
+
             checks.forEach(({ cls, close }) => {
                 if (!close) return;
                 const cell = row.querySelector(`.${cls}`);
                 if (!cell || cell.classList.contains("cell-correct")) return;
-                cell.classList.remove("cell-incorrect", "cell-partial");
-                cell.classList.add("cell-assassin-close");
+                cell.classList.add("cell-assassin-warning");
+                cell.innerText = `${cell.innerText} ⚠`;
             });
 
             if (guessedEnemy.name === currentAssassin.name) {
@@ -197,8 +267,9 @@ const classicDefinitions = {
                 }
             }
         },
-        onReset: () => {
+        onReset: (engine) => {
             currentAssassin = null;
+            if (engine) engine.assassinTargetCategory = null;
         }
     },
     vitarage: {
@@ -223,5 +294,4 @@ const classicWaveCounts = {
     2: 2
 };
 
-// Expose standard 'Modifiers' window object for game.js to use
 window.Modifiers = new ModifierEngine("classic", classicDefinitions, classicWaveCounts);

@@ -3,7 +3,7 @@ const enemyDatabase = {
     "cloaker": { name: "Cloaker", type: "Fodder", health: 100, waves: 29, encounter: "Wave 1 siege" },
     "shielder": { name: "Shielder", type: "Fodder", health: 110, waves: 30, encounter: "Wave 2 siege" },
     "saboteur": { name: "Saboteur", type: "Fodder", health: 100, waves: 32, encounter: "Wave 2 siege" },
-    "landmine": { name: "Landmine", type: "Fodder", health: 19, waves: 32, encounter: "Wave 2 siege" },
+    "landmine": { name: "Landmine", type: "Fodder", health: 20, waves: 32, encounter: "Wave 2 siege" },
     "administrator": { name: "Administrator", type: "Fodder", health: 100, waves: 1, encounter: "Wave 2 epilogue" },
     "grenadier": { name: "Grenadier", type: "Advanced", health: 180, waves: 16, encounter: "Wave 4 siege" },
     "jetpacker": { name: "Jetpacker", type: "Advanced", health: 100, waves: 14, encounter: "Wave 5 siege" },
@@ -21,12 +21,15 @@ const enemyDatabase = {
     "ranger": { name: "Ranger", type: "Mech", health: 150, waves: 16, encounter: "Wave 3 siege" },
     "apu": { name: "APU", type: "Mech", health: 900, waves: 22, encounter: "Wave 4 siege" },
     "apu operator": { name: "APU Operator", type: "Advanced", health: 375, waves: 22, encounter: "Wave 4 siege" },
-    "apu-r": { name: "APU-R", type: "Mech", health: 900, waves: 14, encounter: "Wave 5 siege" },
+    "apu-r": { name: "APU-R", type: "Elite Mech", health: 900, waves: 14, encounter: "Wave 5 siege" },
+    "apu-r operator": { name: "APU-R Operator", type: "Advanced", health: 450, waves: 14, encounter: "Wave 5 siege" },
     "tank": { name: "Tank", type: "Mech", health: 3500, waves: 14, encounter: "Wave 7 siege" },
     "fuel tank (tank)": { name: "Fuel Tank (Tank)", type: "Mech", health: 350, waves: 14, encounter: "Wave 7 siege" },
     "platform": { name: "Platform", type: "Mech", health: 7000, waves: 14, encounter: "Wave 7 siege" },
-    "platform-a": { name: "Platform-A", type: "Mech", health: 7500, waves: 3, encounter: "Wave 8 siege" },
-    "emplacement": { name: "Emplacement", type: "Mech", health: 300, waves: 17, encounter: "Wave 7 siege" },
+    "platform-a": { name: "Platform-A", type: "Elite Mech", health: 7500, waves: 3, encounter: "Wave 8 siege" },
+    "emplacement": { name: "Emplacement", type: "Mech", health: 300, waves: 14, encounter: "Wave 7 siege" },
+    "helicopter sentry": { name: "Helicopter Sentry", type: "Elite Mech", health: 350, waves: 3, encounter: "Wave 8 siege" },
+    "administrant helicopter": { name: "Administrant Helicopter", type: "Elite Mech", health: 7500, waves: 3, encounter: "Wave 8 siege" },
     "combatant": { name: "Combatant", type: "Elite Fodder", health: 100, waves: 21, encounter: "Wave 1 siege" },
     "informant": { name: "Informant", type: "Elite Fodder", health: 150, waves: 16, encounter: "Wave 5 siege" },
     "confidant": { name: "Confidant", type: "Elite Fodder", health: 200, waves: 7, encounter: "Wave 8 siege" },
@@ -40,6 +43,7 @@ const enemyDatabase = {
     "sergeant": { name: "Sergeant", type: "Elite Advanced", health: 500, waves: 6, encounter: "Wave 7 siege" },
     "adjutant": { name: "Adjutant", type: "Elite Advanced", health: 350, waves: 3, encounter: "Wave 8 siege" },
     "observant": { name: "Observant", type: "Elite Fodder", health: 100, waves: 3, encounter: "Wave 8 siege" },
+    "administrant": { name: "Administrant", type: "Elite Advanced", health: 200, waves: 3, encounter: "Wave 8 siege" },
     "fusilier": { name: "Fusilier", type: "Boss", health: 400, waves: 14, encounter: "Wave 3 siege" },
     "daedalus": { name: "Daedalus", type: "Boss", health: 500, waves: 14, encounter: "Wave 3 siege" },
     "tempest": { name: "Tempest", type: "Boss", health: 600, waves: 14, encounter: "Wave 3 siege" },
@@ -52,12 +56,10 @@ const enemyDatabase = {
     "fuel tank (prometheus)": { name: "Fuel Tank (Prometheus)", type: "Boss", health: 200, waves: 12, encounter: "Wave 6 siege" },
     "hermes": { name: "Hermes", type: "Boss", health: 525, waves: 12, encounter: "Wave 6 siege" },
     "hermes pods": { name: "Hermes Pods", type: "Boss", health: 60, waves: 12, encounter: "Wave 6 siege" },
-    "icarus": { name: "Icarus", type: "Boss", health: 300, waves: 3, encounter: "Wave 8 siege" },
-    "icarusheli": { name: "IcarusHeli", type: "Mech", health: 7500, waves: 3, encounter: "Wave 8 siege" },
     "sparta": { name: "Sparta", type: "Boss", health: 440, waves: 9, encounter: "Wave 9 siege" },
     "trident": { name: "Trident", type: "Boss", health: 675, waves: 9, encounter: "Wave 9 siege" },
     "achilles": { name: "Achilles", type: "Boss", health: 280, waves: 9, encounter: "Wave 9 siege" },
-    "drone": { name: "Drone", type: "Boss", health: 75, waves: 10, encounter: "Wave 9 siege" },
+    "drone": { name: "Drone", type: "Boss", health: 75, waves: 9, encounter: "Wave 9 siege" },
     "zeus": { name: "Zeus", type: "Boss", health: 545, waves: 2, encounter: "Wave 9 siege" },
     "dreadnought": { name: "Dreadnought", type: "Boss", health: 16000, waves: 2, encounter: "Wave 10 siege" },
     "chassis": { name: "Chassis", type: "Boss", health: 1300, waves: 1, encounter: "Wave 10 mastermind" },
@@ -68,9 +70,13 @@ const enemyDatabase = {
     "a-10": { name: "A-10", type: "Boss", health: 800, waves: 0, encounter: "Sandbox" },
     "the wicked": { name: "The Wicked", type: "Boss", health: 1550, waves: 0, encounter: "Sandbox" },
     "sparchilles": { name: "Sparchilles", type: "Boss", health: 440, waves: 0, encounter: "Sandbox" },
-    "mega joe": { name: "Mega Joe", type: "Boss", health: 3000, waves: 0, encounter: "Sandbox" },
+    "mega joe": { name: "Mega Joe", type: "Boss", health: 2000, waves: 0, encounter: "Sandbox" },
     "baby": { name: "Baby", type: "???", health: 200, waves: 0, encounter: "Sandbox" },
     "jetnuker": { name: "JetNuker", type: "???", health: 100, waves: 0, encounter: "Sandbox" },
+    "mart": { name: "Mart", type: "Boss", health: 3500, waves: 15, encounter: "Wave 4 siege" },
+    "squad infantry": { name: "Squad Infantry", type: "Elite Fodder", health: 200, waves: 0, encounter: "Sandbox" },
+    "old apu": { name: "Old APU", type: "mech", health: 2000, waves: 0, encounter: "Sandbox" },
+    "operator": { name: "Operator", type: "Advanced", health: 200, waves: 0, encounter: "Sandbox" },
 };
 
 const encounterOrder = [
@@ -79,10 +85,8 @@ const encounterOrder = [
     "Wave 10 mastermind", "Wave 1 epilogue", "Wave 2 epilogue", "Wave 3 epilogue", "Wave 10 hell", "sandbox"
 ];
 
-// Expose so modifiers (like Miscommunication) can shift the First Encounter value
 window.encounterOrder = encounterOrder;
 
-// Expose so modifiers (like Assassin) can pick a random enemy and read the current target
 window.enemyDatabase = enemyDatabase;
 window.getSecretEnemy = function() {
     return secretEnemy;
@@ -99,9 +103,6 @@ let guessedEnemiesList = [];
 let currentWave = 1;
 let isWaveClear = false;
 
-// Tracks which enemies were guessed on each wave, keyed by wave number.
-// Persists across waves (only cleared on a full restart) so modifiers
-// like Vitacharge can look back at recent waves.
 let waveGuessHistory = {};
 
 window.getPreviousWaveGuesses = function(numWaves) {
@@ -158,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function initializeGameSession() {
-  MAX_GUESSES = 6;
+    MAX_GUESSES = 6;
     if (typeof Modifiers !== "undefined") {
         Modifiers.resetAll();
     }
@@ -219,12 +220,25 @@ function makeRandomGuess() {
 
 window.makeRandomGuess = makeRandomGuess;
 
-// Expose a setter so modifiers (like Weakened Signal) can adjust the guess limit
+function makeRandomWrongGuess() {
+    if (gameOver || isWaveClear) return;
+
+    const availableKeys = enemyKeys.filter(key =>
+        !guessedEnemiesList.includes(key) && enemyDatabase[key].name !== secretEnemy.name
+    );
+    if (availableKeys.length === 0) return;
+
+    const randomKey = availableKeys[Math.floor(Math.random() * availableKeys.length)];
+    inputElement.value = enemyDatabase[randomKey].name;
+    submitGuess();
+}
+
+window.makeRandomWrongGuess = makeRandomWrongGuess;
+
 window.setMaxGuesses = function(n) {
     MAX_GUESSES = n;
 };
 
-// Expose timeout handler globally for Modifiers.js
 window.handleTimerTimeout = function() {
     if (gameOver || isWaveClear) return;
 
@@ -245,7 +259,6 @@ window.handleTimerTimeout = function() {
     }
 };
 
-// Expose assassin-guess handler globally for Modifiers.js
 window.handleAssassinGuess = function(assassinEnemy) {
     if (gameOver || isWaveClear) return;
 
@@ -421,21 +434,18 @@ function submitGuess() {
         return td;
     }
 
-    // Build row cells with identifying classes
     row.appendChild(createNameCell(guessedEnemy, secretEnemy));
     row.appendChild(createCell(guessedEnemy.type, secretEnemy.type, guessedEnemy.type, "cell-type"));
     row.appendChild(createNumericCell(guessedEnemy.health, secretEnemy.health, 50, "cell-health"));
     row.appendChild(createNumericCell(guessedEnemy.waves, secretEnemy.waves, 6, "cell-waves"));
     row.appendChild(createEncounterCell(guessedEnemy.encounter, secretEnemy.encounter, 2, "cell-encounter"));
 
-    // 3. Hook before appending row
     if (typeof Modifiers !== "undefined") {
         Modifiers.onGuess(row, guessedEnemy, secretEnemy);
     }
 
     if (tbody) tbody.insertBefore(row, tbody.firstChild);
 
-    // 4. Hook after row is appended
     if (typeof Modifiers !== "undefined") {
         Modifiers.afterGuess();
     }
