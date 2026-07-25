@@ -21,6 +21,7 @@ const enemyDatabase = {
     "ranger": { name: "Ranger", type: "Mech", health: 150, waves: 16, encounter: "Wave 3 siege" },
     "apu": { name: "APU", type: "Mech", health: 900, waves: 22, encounter: "Wave 4 siege" },
     "apu operator": { name: "APU Operator", type: "Advanced", health: 375, waves: 22, encounter: "Wave 4 siege" },
+    "apu-r": { name: "APU-R", type: "Mech", health: 900, waves: 22, encounter: "Wave 5 siege" },
     "tank": { name: "Tank", type: "Mech", health: 3500, waves: 14, encounter: "Wave 7 siege" },
     "fuel tank (tank)": { name: "Fuel Tank (Tank)", type: "Mech", health: 350, waves: 14, encounter: "Wave 7 siege" },
     "platform": { name: "Platform", type: "Mech", health: 7000, waves: 14, encounter: "Wave 7 siege" },
@@ -51,6 +52,8 @@ const enemyDatabase = {
     "fuel tank (prometheus)": { name: "Fuel Tank (Prometheus)", type: "Boss", health: 200, waves: 12, encounter: "Wave 6 siege" },
     "hermes": { name: "Hermes", type: "Boss", health: 525, waves: 12, encounter: "Wave 6 siege" },
     "hermes pods": { name: "Hermes Pods", type: "Boss", health: 60, waves: 12, encounter: "Wave 6 siege" },
+    "icarus": { name: "Icarus", type: "Boss", health: 300, waves: 3, encounter: "Wave 8 siege" },
+    "icarusheli": { name: "IcarusHeli", type: "Mech", health: 15750, waves: 3, encounter: "Wave 8 siege" },
     "sparta": { name: "Sparta", type: "Boss", health: 440, waves: 9, encounter: "Wave 9 siege" },
     "trident": { name: "Trident", type: "Boss", health: 675, waves: 9, encounter: "Wave 9 siege" },
     "achilles": { name: "Achilles", type: "Boss", health: 280, waves: 9, encounter: "Wave 9 siege" },
@@ -79,6 +82,12 @@ const encounterOrder = [
 // Expose so modifiers (like Miscommunication) can shift the First Encounter value
 window.encounterOrder = encounterOrder;
 
+// Expose so modifiers (like Assassin) can pick a random enemy and read the current target
+window.enemyDatabase = enemyDatabase;
+window.getSecretEnemy = function() {
+    return secretEnemy;
+};
+
 const enemyKeys = Object.keys(enemyDatabase);
 let secretEnemy;
 let gameOver = false;
@@ -89,6 +98,19 @@ let guessedEnemiesList = [];
 
 let currentWave = 1;
 let isWaveClear = false;
+
+// Tracks which enemies were guessed on each wave, keyed by wave number.
+// Persists across waves (only cleared on a full restart) so modifiers
+// like Vitacharge can look back at recent waves.
+let waveGuessHistory = {};
+
+window.getPreviousWaveGuesses = function(numWaves) {
+    const result = [];
+    for (let w = currentWave - 1; w >= Math.max(1, currentWave - numWaves); w--) {
+        if (waveGuessHistory[w]) result.push(...waveGuessHistory[w]);
+    }
+    return result;
+};
 
 let inputElement, dropdownMenu, waveIndicator, continueButton, submitButton;
 
@@ -180,6 +202,7 @@ function advanceNextWave() {
 
 function resetToWaveOne() {
     currentWave = 1;
+    waveGuessHistory = {};
     initializeGameSession();
 }
 
@@ -208,6 +231,27 @@ window.handleTimerTimeout = function() {
     const messageElement = document.getElementById("gameMessage");
     if (messageElement) {
         messageElement.innerText = `DETECTED BY SECURITY PROTOCOL! Out of time. Target was: ${secretEnemy.name}.`;
+        messageElement.style.color = "#ff3333";
+    }
+
+    gameOver = true;
+    if (inputElement) inputElement.disabled = true;
+    if (submitButton) submitButton.disabled = true;
+
+    if (continueButton) {
+        continueButton.innerText = "Restart from Wave 1";
+        continueButton.style.display = "inline-block";
+        continueButton.onclick = resetToWaveOne;
+    }
+};
+
+// Expose assassin-guess handler globally for Modifiers.js
+window.handleAssassinGuess = function(assassinEnemy) {
+    if (gameOver || isWaveClear) return;
+
+    const messageElement = document.getElementById("gameMessage");
+    if (messageElement) {
+        messageElement.innerText = `ASSASSINATED! ${assassinEnemy.name} was the assassin. Target was: ${secretEnemy.name}.`;
         messageElement.style.color = "#ff3333";
     }
 
@@ -280,6 +324,9 @@ function submitGuess() {
     if (messageElement) messageElement.innerText = "";
     guessCount++;
     guessedEnemiesList.push(guessName);
+
+    if (!waveGuessHistory[currentWave]) waveGuessHistory[currentWave] = [];
+    waveGuessHistory[currentWave].push(guessName);
 
     const guessedEnemy = enemyDatabase[guessName];
     const tbody = document.getElementById("guessRows");

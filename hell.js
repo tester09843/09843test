@@ -79,6 +79,12 @@ const encounterOrder = [
 // Expose so modifiers (like Miscommunication) can shift the First Encounter value
 window.encounterOrder = encounterOrder;
 
+// Expose so modifiers (like Assassin) can pick a random enemy and read the current target
+window.enemyDatabase = enemyDatabase;
+window.getSecretEnemy = function() {
+    return secretEnemy;
+};
+
 const enemyKeys = Object.keys(enemyDatabase);
 let secretEnemy;
 let gameOver = false;
@@ -89,6 +95,19 @@ let guessedEnemiesList = [];
 
 let currentWave = 1;
 let isWaveClear = false;
+
+// Tracks which enemies were guessed on each wave, keyed by wave number.
+// Persists across waves (only cleared on a full restart) so modifiers
+// like Vitacharge can look back at recent waves.
+let waveGuessHistory = {};
+
+window.getPreviousWaveGuesses = function(numWaves) {
+    const result = [];
+    for (let w = currentWave - 1; w >= Math.max(1, currentWave - numWaves); w--) {
+        if (waveGuessHistory[w]) result.push(...waveGuessHistory[w]);
+    }
+    return result;
+};
 
 let inputElement, dropdownMenu, waveIndicator, continueButton, submitButton;
 
@@ -193,6 +212,7 @@ function advanceNextWave() {
 
 function resetToWaveOne() {
     currentWave = 1;
+    waveGuessHistory = {};
     initializeGameSession();
 }
 
@@ -222,6 +242,28 @@ window.handleTimerTimeout = function() {
     const messageElement = document.getElementById("gameMessage");
     if (messageElement) {
         messageElement.innerText = `DETECTED BY SECURITY PROTOCOL! Out of time. Target was: ${secretEnemy.name}.`;
+        messageElement.style.color = "#ff3333";
+    }
+
+    gameOver = true;
+    if (inputElement) inputElement.disabled = true;
+    if (submitButton) submitButton.disabled = true;
+
+    if (continueButton) {
+        continueButton.innerText = "Restart from Wave 1";
+        continueButton.style.display = "inline-block";
+        continueButton.onclick = resetToWaveOne;
+    }
+};
+
+// Expose assassin-guess handler globally for Modifiers.js
+window.handleAssassinGuess = function(assassinEnemy) {
+    if (gameOver || isWaveClear) return;
+
+    const messageElement = document.getElementById("gameMessage");
+    const displayWave = currentWave === 11 ? "Ultima" : currentWave;
+    if (messageElement) {
+        messageElement.innerText = `ASSASSINATED! ${assassinEnemy.name} was this wave's assassin. Target was: ${secretEnemy.name}. You reached Wave ${displayWave} before failing.`;
         messageElement.style.color = "#ff3333";
     }
 
@@ -294,6 +336,9 @@ function submitGuess() {
     if (messageElement) messageElement.innerText = "";
     guessCount++;
     guessedEnemiesList.push(guessName);
+
+    if (!waveGuessHistory[currentWave]) waveGuessHistory[currentWave] = [];
+    waveGuessHistory[currentWave].push(guessName);
 
     const guessedEnemy = enemyDatabase[guessName];
     const tbody = document.getElementById("guessRows");

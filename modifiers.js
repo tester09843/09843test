@@ -5,6 +5,7 @@ class ModifierEngine {
         this.waveCounts = waveCounts;
         this.active = new Set();
         this.timerInterval = null;
+        this.buffedModifier = null;
     }
 
     startTimer(seconds) {
@@ -45,7 +46,13 @@ class ModifierEngine {
 
     evaluateWave(waveNumber) {
         const targetCount = this.waveCounts[waveNumber] ?? 1;
-        const pool = Object.keys(this.definitions);
+        let pool = Object.keys(this.definitions);
+
+        // Vitarage buffs another active modifier, so it can never be the sole
+        // modifier selected for a wave — exclude it when only 1 slot is available.
+        if (targetCount <= 1) {
+            pool = pool.filter(key => key !== "vitarage");
+        }
 
         const selectedKeys = [];
         while (selectedKeys.length < targetCount && pool.length > 0) {
@@ -104,9 +111,10 @@ class ModifierEngine {
 
     resetAll() {
         this.clearTimer();
+        this.buffedModifier = null;
         this.active.forEach(key => {
             if (this.definitions[key]?.onReset) {
-                this.definitions[key].onReset();
+                this.definitions[key].onReset(this);
             }
         });
         this.active.clear();
@@ -130,7 +138,12 @@ class ModifierEngine {
                 const tag = document.createElement("span");
                 const classKey = key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
                 tag.className = `modifier-tag ${classKey}`;
-                tag.innerText = def.name;
+                if (key === this.buffedModifier) {
+                    tag.classList.add("modifier-buffed");
+                    tag.innerText = `⚡ ${def.name}`;
+                } else {
+                    tag.innerText = def.name;
+                }
                 listContainer.appendChild(tag);
             }
         });

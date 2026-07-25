@@ -1,3 +1,9 @@
+// Tracks which enemy keys are secretly vitacharged for the current wave (Vitacharge modifier)
+let vitachargedEnemies = new Set();
+
+// Tracks the current wave's assassin enemy (Assassin modifier)
+let currentAssassin = null;
+
 const classicDefinitions = {
     cloaked: {
         name: "Cloaked",
@@ -116,6 +122,98 @@ const classicDefinitions = {
                     target.innerText = `${order[newIdx]}${arrowSuffix}`;
                 }
             }
+        }
+    },
+    vitacharge: {
+        name: "Vitacharge",
+        description: "2 enemies you guessed in the previous 2 waves are secretly vitacharged this wave. Guess one and every stat but its name goes blank and gold.",
+        onStart: () => {
+            vitachargedEnemies = new Set();
+            if (typeof window.getPreviousWaveGuesses === "function") {
+                const pool = [...new Set(window.getPreviousWaveGuesses(2))];
+                while (vitachargedEnemies.size < 2 && pool.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * pool.length);
+                    vitachargedEnemies.add(pool.splice(randomIndex, 1)[0]);
+                }
+            }
+        },
+        onGuess: (row, guessedEnemy) => {
+            if (!vitachargedEnemies.has(guessedEnemy.name.toLowerCase())) return;
+
+            row.classList.add("row-vitacharged");
+            Array.from(row.children).forEach(cell => {
+                if (cell.classList.contains("cell-name")) return;
+                cell.classList.remove("cell-correct", "cell-incorrect", "cell-partial");
+                cell.textContent = "";
+                cell.classList.add("cell-vitacharged");
+            });
+        },
+        onReset: () => {
+            vitachargedEnemies = new Set();
+        }
+    },
+    assassin: {
+        name: "Assassin",
+        description: "A random enemy is secretly the assassin this wave. Guessing it fails you instantly. Stats close to the assassin are colored black instead of yellow.",
+        onStart: () => {
+            currentAssassin = null;
+            const db = window.enemyDatabase || {};
+            const secret = typeof window.getSecretEnemy === "function" ? window.getSecretEnemy() : null;
+            const pool = Object.keys(db).filter(key => !secret || db[key].name !== secret.name);
+            if (pool.length > 0) {
+                const randomKey = pool[Math.floor(Math.random() * pool.length)];
+                currentAssassin = db[randomKey];
+            }
+        },
+        onGuess: (row, guessedEnemy) => {
+            if (!currentAssassin) return;
+
+            const order = window.encounterOrder || [];
+            const lowerOrder = order.map(item => item.toLowerCase());
+            const guessedEncounterIdx = lowerOrder.indexOf(guessedEnemy.encounter.toLowerCase());
+            const assassinEncounterIdx = lowerOrder.indexOf(currentAssassin.encounter.toLowerCase());
+
+            const checks = [
+                { cls: "cell-health", close: Math.abs(guessedEnemy.health - currentAssassin.health) <= 50 },
+                { cls: "cell-waves", close: Math.abs(guessedEnemy.waves - currentAssassin.waves) <= 6 },
+                {
+                    cls: "cell-encounter",
+                    close: guessedEncounterIdx !== -1 && assassinEncounterIdx !== -1 &&
+                        Math.abs(guessedEncounterIdx - assassinEncounterIdx) <= 2
+                }
+            ];
+
+            checks.forEach(({ cls, close }) => {
+                if (!close) return;
+                const cell = row.querySelector(`.${cls}`);
+                if (!cell || cell.classList.contains("cell-correct")) return;
+                cell.classList.remove("cell-incorrect", "cell-partial");
+                cell.classList.add("cell-assassin-close");
+            });
+
+            if (guessedEnemy.name === currentAssassin.name) {
+                if (typeof window.handleAssassinGuess === "function") {
+                    window.handleAssassinGuess(currentAssassin);
+                }
+            }
+        },
+        onReset: () => {
+            currentAssassin = null;
+        }
+    },
+    vitarage: {
+        name: "Vitarage",
+        description: "Doesn't affect the game directly — instead buffs 1 other random active modifier this wave.",
+        onStart: (engine) => {
+            engine.buffedModifier = null;
+            const candidates = [...engine.active].filter(key => key !== "vitarage");
+            if (candidates.length > 0) {
+                engine.buffedModifier = candidates[Math.floor(Math.random() * candidates.length)];
+            }
+            engine.renderBadges();
+        },
+        onReset: (engine) => {
+            engine.buffedModifier = null;
         }
     }
 };
