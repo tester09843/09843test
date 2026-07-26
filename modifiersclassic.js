@@ -300,9 +300,11 @@ const classicDefinitions = {
     }
 };
 
-const classicWaveCounts = {
-    1: 1,
-    2: 2
-};
+function classicWaveCounts(waveNumber) {
+    if (waveNumber <= 5) return 0;
+
+    const cap = Math.min(4, Math.floor(waveNumber / 5));
+    return 1 + Math.floor(Math.random() * cap);
+}
 
 window.Modifiers = new ModifierEngine("classic", classicDefinitions, classicWaveCounts);

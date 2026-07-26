@@ -83,7 +83,9 @@ class ModifierEngine {
     }
 
     evaluateWave(waveNumber) {
-        const targetCount = this.waveCounts[waveNumber] ?? 1;
+        const targetCount = typeof this.waveCounts === "function"
+            ? this.waveCounts(waveNumber)
+            : (this.waveCounts[waveNumber] ?? 1);
         let pool = Object.keys(this.definitions);
 
         if (targetCount <= 1) {
@@ -208,7 +210,7 @@ class ModifierEngine {
         listContainer.innerHTML = "";
 
         if (this.active.size === 0) {
-            listContainer.innerHTML = '<span class="modifier-tag">None</span>';
+            listContainer.innerHTML = '<span class="modifier-tag modifier-tag-none">None</span>';
             this.updateDescriptionPanel();
             return;
         }
