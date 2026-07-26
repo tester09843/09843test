@@ -166,7 +166,6 @@ function initializeGameSession() {
     }
 
     secretEnemy = enemyDatabase[enemyKeys[Math.floor(Math.random() * enemyKeys.length)]];
-    console.log("Correct answer:", secretEnemy.name);
     gameOver = false;
     isWaveClear = false;
     guessCount = 0;
