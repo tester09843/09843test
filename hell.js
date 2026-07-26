@@ -224,8 +224,11 @@ function makeRandomGuess() {
     if (gameOver || isWaveClear) return;
 
     const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+    const vitacharged = typeof window.getVitachargedEnemies === "function" ? window.getVitachargedEnemies() : null;
     const availableKeys = enemyKeys.filter(key =>
-        !guessedEnemiesList.includes(key) && (!assassin || enemyDatabase[key].name !== assassin.name)
+        !guessedEnemiesList.includes(key) &&
+        (!assassin || enemyDatabase[key].name !== assassin.name) &&
+        (!vitacharged || !vitacharged.has(key))
     );
     if (availableKeys.length === 0) return;
 
@@ -240,10 +243,12 @@ function makeRandomWrongGuess() {
     if (gameOver || isWaveClear) return;
 
     const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+    const vitacharged = typeof window.getVitachargedEnemies === "function" ? window.getVitachargedEnemies() : null;
     const availableKeys = enemyKeys.filter(key =>
         !guessedEnemiesList.includes(key) &&
         enemyDatabase[key].name !== secretEnemy.name &&
-        (!assassin || enemyDatabase[key].name !== assassin.name)
+        (!assassin || enemyDatabase[key].name !== assassin.name) &&
+        (!vitacharged || !vitacharged.has(key))
     );
     if (availableKeys.length === 0) return;
 
@@ -481,7 +486,7 @@ function submitGuess() {
 
         if (currentWave === 11) {
             if (messageElement) {
-                messageElement.innerText = assassin ? `GG! The assassin was ${assassin.name}.` : `GG!`;
+                messageElement.innerText = assassin ? `GG!` : `GG!`;
                 messageElement.style.color = "#00ffcc";
             }
             if (continueButton) {
@@ -509,7 +514,11 @@ function submitGuess() {
     if (guessCount >= MAX_GUESSES) {
         const displayWave = currentWave === 11 ? "Ultima" : currentWave;
         if (messageElement) {
+            const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
             messageElement.innerText = `Out of guesses. Target was: ${secretEnemy.name}. You reached Wave ${displayWave} before failing.`;
+            if (assassin) {
+                messageElement.innerText += ` The assassin was ${assassin.name}.`;
+            }
             messageElement.style.color = "#ff3333";
         }
         gameOver = true;

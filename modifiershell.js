@@ -1,5 +1,9 @@
 let vitachargedEnemies = new Set();
 
+window.getVitachargedEnemies = function() {
+    return vitachargedEnemies;
+};
+
 let currentAssassin = null;
 
 window.getCurrentAssassin = function() {
@@ -292,14 +296,36 @@ const hellDefinitions = {
     },
     vitarage: {
         name: "Vitarage",
-        description: "Doesn't affect the game directly — instead buffs 1 other random active modifier this wave.",
+        description: "Doesn't affect the game directly — instead buffs 1 or more other random active modifiers this wave. Buffs 2 starting wave 9, 3 on wave 10, and every active modifier on Wave Ultima.",
         onStart: (engine) => {
             engine.buffedModifiers = new Set();
-            const candidates = [...engine.active].filter(key => key !== "vitarage");
-            if (candidates.length > 0) {
-                const randomKey = candidates[Math.floor(Math.random() * candidates.length)];
-                engine.buffedModifiers.add(randomKey);
+            const wave = engine.currentWave;
+            let candidates = [...engine.active].filter(key => key !== "vitarage");
+
+            // Vitaraged Weakened Signal (4 guesses) combined with Jammed Radar
+            // (which burns a guess immediately) is too punishing, so Weakened
+            // Signal can never be the buff target while Jammed Radar is active —
+            // except on Wave Ultima, where every active modifier gets buffed.
+            if (wave !== 11 && engine.active.has("jammedRadar")) {
+                candidates = candidates.filter(key => key !== "weakenedSignal");
             }
+
+            if (candidates.length === 0) {
+                engine.renderBadges();
+                return;
+            }
+
+            let buffCount = 1;
+            if (wave === 9) buffCount = 2;
+            else if (wave === 10) buffCount = 3;
+            else if (wave === 11) buffCount = candidates.length;
+
+            const pool = [...candidates];
+            while (engine.buffedModifiers.size < buffCount && pool.length > 0) {
+                const randomIndex = Math.floor(Math.random() * pool.length);
+                engine.buffedModifiers.add(pool.splice(randomIndex, 1)[0]);
+            }
+
             engine.renderBadges();
         },
         onReset: (engine) => {
@@ -308,9 +334,20 @@ const hellDefinitions = {
     }
 };
 
-const hellWaveCounts = {
-    1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2
-};
+function getHellWaveModifierCount(waveNumber) {
+    if (waveNumber === 11) return Object.keys(hellDefinitions).length;
 
-window.Modifiers = new ModifierEngine("hell", hellDefinitions, hellWaveCounts);
-window.Modifiers.forceVitarage = true;
+    const schedule = {
+        1: 1, 2: 1,
+        3: 2, 4: 2,
+        5: 3, 6: 3,
+        7: 4, 8: 4,
+        9: 5,
+        10: 6
+    };
+
+    return schedule[waveNumber] ?? 1;
+}
+
+window.Modifiers = new ModifierEngine("hell", hellDefinitions, getHellWaveModifierCount);
+window.Modifiers.forceVitarage = (waveNumber) => waveNumber >= 7;

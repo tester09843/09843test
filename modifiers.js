@@ -123,9 +123,10 @@ class ModifierEngine {
 
         // vitarage must resolve buffedModifier before any other onStart runs,
         // otherwise the buffed modifier can't tell it's been buffed yet.
-        // assassin must resolve currentAssassin before anything that can trigger
-        // a guess (e.g. Jammed Radar), so that guess can never target the assassin.
-        const priorityOrder = ["vitarage", "assassin"];
+        // assassin and vitacharge must resolve before anything that can trigger
+        // a guess (e.g. Jammed Radar), so that guess can never target the
+        // assassin or a vitacharged enemy.
+        const priorityOrder = ["vitarage", "assassin", "vitacharge"];
         const orderedKeys = [
             ...priorityOrder.filter(key => selectedKeys.includes(key)),
             ...selectedKeys.filter(key => !priorityOrder.includes(key))
@@ -191,9 +192,16 @@ class ModifierEngine {
         const panel = document.getElementById("modifierDescription");
         if (!panel) return;
 
-        const def = this.expandedModifierKey ? this.definitions[this.expandedModifierKey] : null;
-        if (def) {
-            panel.innerText = def.description;
+        let text = null;
+        if (this.expandedModifierKey === "none") {
+            text = "no modifiers yet yay!";
+        } else if (this.expandedModifierKey) {
+            const def = this.definitions[this.expandedModifierKey];
+            text = def ? def.description : null;
+        }
+
+        if (text) {
+            panel.innerText = text;
             panel.style.display = "block";
         } else {
             panel.innerText = "";
@@ -212,14 +220,19 @@ class ModifierEngine {
         const listContainer = document.getElementById("modifiersList");
         if (!listContainer) return;
 
-        if (this.expandedModifierKey && !this.active.has(this.expandedModifierKey)) {
+        if (this.expandedModifierKey && this.expandedModifierKey !== "none" && !this.active.has(this.expandedModifierKey)) {
             this.expandedModifierKey = null;
         }
 
         listContainer.innerHTML = "";
 
         if (this.active.size === 0) {
-            listContainer.innerHTML = '<span class="modifier-tag modifier-tag-none">None</span>';
+            const noneTag = document.createElement("span");
+            noneTag.className = "modifier-tag modifier-tag-none";
+            noneTag.innerText = "None";
+            noneTag.dataset.modifierKey = "none";
+            noneTag.addEventListener("click", () => this.toggleDescription("none"));
+            listContainer.appendChild(noneTag);
             this.updateDescriptionPanel();
             return;
         }
