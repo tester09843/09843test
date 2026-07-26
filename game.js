@@ -165,6 +165,7 @@ function initializeGameSession() {
     }
 
     secretEnemy = enemyDatabase[enemyKeys[Math.floor(Math.random() * enemyKeys.length)]];
+    console.log("Correct answer:", secretEnemy.name);
     gameOver = false;
     isWaveClear = false;
     guessCount = 0;
@@ -270,7 +271,7 @@ window.handleAssassinGuess = function(assassinEnemy) {
 
     const messageElement = document.getElementById("gameMessage");
     if (messageElement) {
-        messageElement.innerText = `ASSASSINATED! ${assassinEnemy.name} was the assassin. Target was: ${secretEnemy.name}.`;
+        messageElement.innerText = `Assassinated by ${assassinEnemy.name}, Target was ${secretEnemy.name}, you reached wave ${currentWave} before failing.`;
         messageElement.style.color = "#ff3333";
     }
 
@@ -461,7 +462,11 @@ function submitGuess() {
 
     if (guessedEnemy.name === secretEnemy.name) {
         if (messageElement) {
+            const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
             messageElement.innerText = `SUCCESS! The target was ${secretEnemy.name}! Wave ${currentWave} Complete!`;
+            if (assassin) {
+                messageElement.innerText += ` The assassin was ${assassin.name}.`;
+            }
             messageElement.style.color = "#00ffcc";
         }
         isWaveClear = true;

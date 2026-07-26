@@ -5,9 +5,13 @@ class ModifierEngine {
         this.waveCounts = waveCounts;
         this.active = new Set();
         this.timerInterval = null;
-        this.buffedModifier = null;
+        this.buffedModifiers = new Set();
         this.securityProtocolWrongGuesses = 0;
         this.expandedModifierKey = null;
+    }
+
+    isBuffed(key) {
+        return this.buffedModifiers.has(key);
     }
 
     startTimer(seconds) {
@@ -27,7 +31,7 @@ class ModifierEngine {
 
             tag.innerText = `SECURITY PROTOCOL (${this.timerFormatTime(this.timerTimeLeft)})`;
 
-            const isBuffed = this.buffedModifier === "securityProtocol";
+            const isBuffed = this.isBuffed("securityProtocol");
             const activeUrgentClass = isBuffed ? "security-protocol-urgent-buffed" : "security-protocol-urgent";
             const inactiveUrgentClass = isBuffed ? "security-protocol-urgent" : "security-protocol-urgent-buffed";
 
@@ -45,7 +49,7 @@ class ModifierEngine {
     }
 
     getSecurityProtocolSpeedMultiplier() {
-        return this.buffedModifier === "securityProtocol"
+        return this.isBuffed("securityProtocol")
             ? 1 + 0.5 * this.securityProtocolWrongGuesses
             : 1;
     }
@@ -83,6 +87,7 @@ class ModifierEngine {
     }
 
     evaluateWave(waveNumber) {
+        this.currentWave = waveNumber;
         const targetCount = typeof this.waveCounts === "function"
             ? this.waveCounts(waveNumber)
             : (this.waveCounts[waveNumber] ?? 1);
@@ -94,7 +99,11 @@ class ModifierEngine {
 
         const selectedKeys = [];
 
-        if (this.forceVitarage && targetCount >= 2 && this.definitions.vitarage) {
+        const forceVitarageNow = typeof this.forceVitarage === "function"
+            ? this.forceVitarage(waveNumber)
+            : this.forceVitarage;
+
+        if (forceVitarageNow && targetCount >= 1 && this.definitions.vitarage) {
             selectedKeys.push("vitarage");
             pool = pool.filter(key => key !== "vitarage");
         }
@@ -161,7 +170,7 @@ class ModifierEngine {
 
     resetAll() {
         this.clearTimer();
-        this.buffedModifier = null;
+        this.buffedModifiers = new Set();
         this.securityProtocolWrongGuesses = 0;
         this.expandedModifierKey = null;
         this.active.forEach(key => {
@@ -221,7 +230,7 @@ class ModifierEngine {
                 const tag = document.createElement("span");
                 const classKey = key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
                 tag.className = `modifier-tag ${classKey}`;
-                if (key === this.buffedModifier) {
+                if (this.isBuffed(key)) {
                     tag.classList.add("modifier-buffed");
                 }
                 tag.innerText = def.name;

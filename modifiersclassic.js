@@ -15,7 +15,7 @@ const classicDefinitions = {
             if (typeHeader) typeHeader.style.display = "none";
 
             if (engine) {
-                if (engine.buffedModifier === key) {
+                if (engine.isBuffed(key)) {
                     const categories = ["cell-health", "cell-waves", "cell-encounter"];
                     engine.cloakedTargetCategory = categories[Math.floor(Math.random() * categories.length)];
                 } else {
@@ -44,7 +44,7 @@ const classicDefinitions = {
         name: "Jammed Radar",
         description: "Automatically submits a random guess on wave start. Vitaraged: submits 2 random guesses that are guaranteed wrong.",
         onStart: (engine, key) => {
-            if (engine && engine.buffedModifier === key) {
+            if (engine && engine.isBuffed(key)) {
                 if (typeof window.makeRandomWrongGuess === "function") {
                     window.makeRandomWrongGuess();
                     window.makeRandomWrongGuess();
@@ -59,7 +59,7 @@ const classicDefinitions = {
         name: "Security Protocol (01:00)",
         description: "Guess the enemy within 60 seconds or fail. Vitaraged: 2 minutes instead, but every wrong guess (including Jammed Radar's) speeds the timer up by 0.5x, permanently for the wave.",
         onStart: (engine, key) => {
-            const buffed = engine && engine.buffedModifier === key;
+            const buffed = engine && engine.isBuffed(key);
             engine.startTimer(buffed ? 120 : 60);
         },
         onGuess: (row, guessedEnemy, secretEnemy, engine) => {
@@ -78,7 +78,7 @@ const classicDefinitions = {
         afterGuess: (engine, key) => {
             const tbody = document.getElementById("guessRows");
             if (!tbody) return;
-            const visibleCount = engine && engine.buffedModifier === key ? 1 : 2;
+            const visibleCount = engine && engine.isBuffed(key) ? 1 : 2;
             Array.from(tbody.children).forEach((row, index) => {
                 row.style.display = index < visibleCount ? "" : "none";
             });
@@ -123,7 +123,7 @@ const classicDefinitions = {
             };
 
             flipOnce();
-            if (engine && engine.buffedModifier === key) {
+            if (engine && engine.isBuffed(key)) {
                 flipOnce();
             }
         }
@@ -132,7 +132,7 @@ const classicDefinitions = {
         name: "Weakened Signal",
         description: "You only have 5 guesses instead of 6. Vitaraged: only 4 guesses instead of 6.",
         onStart: (engine, key) => {
-            const buffed = engine && engine.buffedModifier === key;
+            const buffed = engine && engine.isBuffed(key);
             if (typeof window.setMaxGuesses === "function") {
                 window.setMaxGuesses(buffed ? 4 : 5);
             }
@@ -181,7 +181,7 @@ const classicDefinitions = {
                 }
             }
 
-            if (engine && engine.buffedModifier === key) {
+            if (engine && engine.isBuffed(key)) {
                 target.classList.remove("cell-correct", "cell-incorrect", "cell-partial");
                 const fakeColors = ["cell-correct", "cell-incorrect", "cell-partial"];
                 target.classList.add(fakeColors[Math.floor(Math.random() * fakeColors.length)]);
@@ -193,12 +193,19 @@ const classicDefinitions = {
         description: "3 enemies you guessed in the previous 2 waves are secretly vitacharged this wave. Guess one and every stat but its name goes blank and gold. Vitaraged: 6 enemies from the previous 4 waves instead.",
         onStart: (engine, key) => {
             vitachargedEnemies = new Set();
-            const buffed = engine && engine.buffedModifier === key;
+            const buffed = engine && engine.isBuffed(key);
             const waveSpan = buffed ? 4 : 2;
             const targetCount = buffed ? 6 : 3;
 
             if (typeof window.getPreviousWaveGuesses === "function") {
-                const pool = [...new Set(window.getPreviousWaveGuesses(waveSpan))];
+                const secret = typeof window.getSecretEnemy === "function" ? window.getSecretEnemy() : null;
+                const db = window.enemyDatabase || {};
+
+                // The current target can never be vitacharged, otherwise guessing
+                // it correctly would get blanked out instead of showing the win.
+                const pool = [...new Set(window.getPreviousWaveGuesses(waveSpan))]
+                    .filter(enemyKey => !secret || !db[enemyKey] || db[enemyKey].name !== secret.name);
+
                 while (vitachargedEnemies.size < targetCount && pool.length > 0) {
                     const randomIndex = Math.floor(Math.random() * pool.length);
                     vitachargedEnemies.add(pool.splice(randomIndex, 1)[0]);
@@ -234,7 +241,7 @@ const classicDefinitions = {
             }
 
             if (engine) {
-                if (engine.buffedModifier === key) {
+                if (engine.isBuffed(key)) {
                     const categories = ["cell-health", "cell-waves", "cell-encounter"];
                     engine.assassinTargetCategory = categories[Math.floor(Math.random() * categories.length)];
                 } else {
@@ -285,17 +292,31 @@ const classicDefinitions = {
     },
     vitarage: {
         name: "Vitarage",
-        description: "Doesn't affect the game directly — instead buffs 1 other random active modifier this wave.",
+        description: "Doesn't affect the game directly — instead buffs 1 or more random active modifiers this wave. Starting wave 25 it can buff up to 2, wave 30 up to 3, and wave 35 up to 4, starting wave 40 vitarage will always be on.",
         onStart: (engine) => {
-            engine.buffedModifier = null;
+            engine.buffedModifiers = new Set();
             const candidates = [...engine.active].filter(key => key !== "vitarage");
+
             if (candidates.length > 0) {
-                engine.buffedModifier = candidates[Math.floor(Math.random() * candidates.length)];
+                const wave = engine.currentWave || 1;
+                let maxBuffs = 1;
+                if (wave >= 35) maxBuffs = 4;
+                else if (wave >= 30) maxBuffs = 3;
+                else if (wave >= 25) maxBuffs = 2;
+                maxBuffs = Math.min(maxBuffs, candidates.length);
+
+                const buffCount = 1 + Math.floor(Math.random() * maxBuffs);
+
+                const pool = [...candidates];
+                while (engine.buffedModifiers.size < buffCount && pool.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * pool.length);
+                    engine.buffedModifiers.add(pool.splice(randomIndex, 1)[0]);
+                }
             }
             engine.renderBadges();
         },
         onReset: (engine) => {
-            engine.buffedModifier = null;
+            engine.buffedModifiers = new Set();
         }
     }
 };
@@ -308,3 +329,4 @@ function classicWaveCounts(waveNumber) {
 }
 
 window.Modifiers = new ModifierEngine("classic", classicDefinitions, classicWaveCounts);
+window.Modifiers.forceVitarage = (wave) => wave > 40;

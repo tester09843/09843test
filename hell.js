@@ -164,6 +164,7 @@ function initializeGameSession() {
     }
 
     secretEnemy = enemyDatabase[enemyKeys[Math.floor(Math.random() * enemyKeys.length)]];
+    console.log("Correct answer:", secretEnemy.name);
     gameOver = false;
     isWaveClear = false;
     guessCount = 0;
@@ -281,7 +282,7 @@ window.handleAssassinGuess = function(assassinEnemy) {
     const messageElement = document.getElementById("gameMessage");
     const displayWave = currentWave === 11 ? "Ultima" : currentWave;
     if (messageElement) {
-        messageElement.innerText = `ASSASSINATED! ${assassinEnemy.name} was this wave's assassin. Target was: ${secretEnemy.name}. You reached Wave ${displayWave} before failing.`;
+        messageElement.innerText = `Assassinated by ${assassinEnemy.name}, Target was ${secretEnemy.name}, you reached wave ${displayWave} before failing.`;
         messageElement.style.color = "#ff3333";
     }
 
@@ -474,9 +475,11 @@ function submitGuess() {
         inputElement.disabled = true;
         if (submitButton) submitButton.disabled = true;
 
+        const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+
         if (currentWave === 11) {
             if (messageElement) {
-                messageElement.innerText = `GG!`;
+                messageElement.innerText = assassin ? `GG! The assassin was ${assassin.name}.` : `GG!`;
                 messageElement.style.color = "#00ffcc";
             }
             if (continueButton) {
@@ -487,6 +490,9 @@ function submitGuess() {
         } else {
             if (messageElement) {
                 messageElement.innerText = `SUCCESS! The target was ${secretEnemy.name}! Wave ${currentWave} Complete!`;
+                if (assassin) {
+                    messageElement.innerText += ` The assassin was ${assassin.name}.`;
+                }
                 messageElement.style.color = "#00ffcc";
             }
             if (continueButton) {
