@@ -202,7 +202,14 @@ const classicDefinitions = {
             const targetCount = buffed ? 6 : 3;
 
             if (typeof window.getPreviousWaveGuesses === "function") {
-                const pool = [...new Set(window.getPreviousWaveGuesses(waveSpan))];
+                const secret = typeof window.getSecretEnemy === "function" ? window.getSecretEnemy() : null;
+                const db = window.enemyDatabase || {};
+
+                // The current target can never be vitacharged, otherwise guessing
+                // it correctly would get blanked out instead of showing the win.
+                const pool = [...new Set(window.getPreviousWaveGuesses(waveSpan))]
+                    .filter(enemyKey => !secret || !db[enemyKey] || db[enemyKey].name !== secret.name);
+
                 while (vitachargedEnemies.size < targetCount && pool.length > 0) {
                     const randomIndex = Math.floor(Math.random() * pool.length);
                     vitachargedEnemies.add(pool.splice(randomIndex, 1)[0]);
@@ -329,7 +336,12 @@ function classicWaveCounts(waveNumber) {
     if (waveNumber <= 5) return 0;
 
     const cap = Math.min(4, Math.floor(waveNumber / 5));
-    const minCount = Math.min(waveNumber > 40 ? 2 : 1, cap);
+    let minCount = 1;
+    if (waveNumber >= 100) minCount = 4;
+    else if (waveNumber >= 60) minCount = 3;
+    else if (waveNumber > 40) minCount = 2;
+    minCount = Math.min(minCount, cap);
+
     return minCount + Math.floor(Math.random() * (cap - minCount + 1));
 }
 
