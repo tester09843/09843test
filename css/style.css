@@ -550,6 +550,8 @@ td.name-cell {
     text-transform: uppercase;
     box-shadow: 0 0 8px rgba(255, 0, 55, 0.3);
     animation: modifierGlow 2s infinite alternate;
+    cursor: pointer;
+    user-select: none;
 }
 
 .modifier-tag.jammed-radar {
@@ -581,6 +583,42 @@ td.name-cell {
     font-weight: bold;
     box-shadow: 0 0 10px rgba(255, 0, 55, 0.3);
     animation: alertPulse 1s infinite alternate;
+}
+
+.modifier-tag.security-protocol.security-protocol-urgent {
+    animation: securityProtocolFlash 0.4s infinite alternate !important;
+    background-color: rgba(255, 0, 0, 0.6) !important;
+    border-color: #ff0000 !important;
+    color: #ffffff !important;
+}
+
+.modifier-tag.security-protocol.security-protocol-urgent-buffed {
+    animation: securityProtocolFlashBuffed 0.4s infinite alternate !important;
+    background-color: rgba(102, 0, 204, 0.6) !important;
+    border-color: #b266ff !important;
+    color: #ffffff !important;
+}
+
+@keyframes securityProtocolFlash {
+    from {
+        opacity: 1;
+        box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
+    }
+    to {
+        opacity: 0.35;
+        box-shadow: 0 0 20px rgba(255, 0, 0, 1);
+    }
+}
+
+@keyframes securityProtocolFlashBuffed {
+    from {
+        opacity: 1;
+        box-shadow: 0 0 8px rgba(178, 102, 255, 0.6);
+    }
+    to {
+        opacity: 0.35;
+        box-shadow: 0 0 20px rgba(178, 102, 255, 1);
+    }
 }
 
 .modifier-tag.fog {
@@ -676,4 +714,23 @@ tr.row-vitacharged td.cell-name {
     border-radius: 4px;
     font-weight: bold;
     box-shadow: 0 0 10px rgba(178, 102, 255, 0.4);
+}
+
+.modifier-tag-active {
+    outline: 2px solid #ffffff;
+    outline-offset: 1px;
+}
+
+.modifier-description {
+    width: 100%;
+    max-width: 500px;
+    margin: -0.4rem auto 1.2rem auto;
+    padding: 0.75rem 1rem;
+    background: rgba(20, 0, 0, 0.6);
+    border: 1px solid rgba(255, 0, 55, 0.4);
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    text-align: left;
 }

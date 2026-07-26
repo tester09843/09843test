@@ -2,6 +2,10 @@ let vitachargedEnemies = new Set();
 
 let currentAssassin = null;
 
+window.getCurrentAssassin = function() {
+    return currentAssassin;
+};
+
 const classicDefinitions = {
     cloaked: {
         name: "Cloaked",
@@ -53,9 +57,16 @@ const classicDefinitions = {
     },
     securityProtocol: {
         name: "Security Protocol (01:00)",
-        description: "Guess the enemy within 60 seconds or fail.",
-        onStart: (engine) => {
-            engine.startTimer(60);
+        description: "Guess the enemy within 60 seconds or fail. Vitaraged: 2 minutes instead, but every wrong guess (including Jammed Radar's) speeds the timer up by 0.5x, permanently for the wave.",
+        onStart: (engine, key) => {
+            const buffed = engine && engine.buffedModifier === key;
+            engine.startTimer(buffed ? 120 : 60);
+        },
+        onGuess: (row, guessedEnemy, secretEnemy, engine) => {
+            if (engine && guessedEnemy.name !== secretEnemy.name) {
+                engine.securityProtocolWrongGuesses = (engine.securityProtocolWrongGuesses || 0) + 1;
+                engine.refreshTimerSpeed();
+            }
         },
         onReset: (engine) => {
             engine.clearTimer();
@@ -179,12 +190,12 @@ const classicDefinitions = {
     },
     vitacharge: {
         name: "Vitacharge",
-        description: "2 enemies you guessed in the previous 2 waves are secretly vitacharged this wave. Guess one and every stat but its name goes blank and gold. Vitaraged: 6 enemies from the previous 4 waves instead.",
+        description: "3 enemies you guessed in the previous 2 waves are secretly vitacharged this wave. Guess one and every stat but its name goes blank and gold. Vitaraged: 6 enemies from the previous 4 waves instead.",
         onStart: (engine, key) => {
             vitachargedEnemies = new Set();
             const buffed = engine && engine.buffedModifier === key;
             const waveSpan = buffed ? 4 : 2;
-            const targetCount = buffed ? 6 : 2;
+            const targetCount = buffed ? 6 : 3;
 
             if (typeof window.getPreviousWaveGuesses === "function") {
                 const pool = [...new Set(window.getPreviousWaveGuesses(waveSpan))];

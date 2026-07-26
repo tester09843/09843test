@@ -29,7 +29,7 @@ const enemyDatabase = {
     "platform-a": { name: "Platform-A", type: "Elite Mech", health: 7500, waves: 3, encounter: "Wave 8 siege" },
     "emplacement": { name: "Emplacement", type: "Mech", health: 300, waves: 14, encounter: "Wave 7 siege" },
     "helicopter sentry": { name: "Helicopter Sentry", type: "Elite Mech", health: 350, waves: 3, encounter: "Wave 8 siege" },
-    "administrant helicopter": { name: "Administrant Helicopter", type: "Elite Mech", health: 7500, waves: 3, encounter: "Wave 8 siege" },
+    "administrant helicopter": { name: "Administrant Helicopter", type: "Elite Mech", health: 5000, waves: 3, encounter: "Wave 8 siege" },
     "combatant": { name: "Combatant", type: "Elite Fodder", health: 100, waves: 21, encounter: "Wave 1 siege" },
     "informant": { name: "Informant", type: "Elite Fodder", health: 150, waves: 16, encounter: "Wave 5 siege" },
     "confidant": { name: "Confidant", type: "Elite Fodder", health: 200, waves: 7, encounter: "Wave 8 siege" },
@@ -43,7 +43,7 @@ const enemyDatabase = {
     "sergeant": { name: "Sergeant", type: "Elite Advanced", health: 500, waves: 6, encounter: "Wave 7 siege" },
     "adjutant": { name: "Adjutant", type: "Elite Advanced", health: 350, waves: 3, encounter: "Wave 8 siege" },
     "observant": { name: "Observant", type: "Elite Fodder", health: 100, waves: 3, encounter: "Wave 8 siege" },
-    "administrant": { name: "Administrant", type: "Elite Advanced", health: 200, waves: 3, encounter: "Wave 8 siege" },
+    "administrant": { name: "Administrant", type: "Elite Fodder", health: 250, waves: 3, encounter: "Wave 8 siege" },
     "fusilier": { name: "Fusilier", type: "Boss", health: 400, waves: 14, encounter: "Wave 3 siege" },
     "daedalus": { name: "Daedalus", type: "Boss", health: 500, waves: 14, encounter: "Wave 3 siege" },
     "tempest": { name: "Tempest", type: "Boss", health: 600, waves: 14, encounter: "Wave 3 siege" },
@@ -71,8 +71,8 @@ const enemyDatabase = {
     "the wicked": { name: "The Wicked", type: "Boss", health: 1550, waves: 0, encounter: "Sandbox" },
     "sparchilles": { name: "Sparchilles", type: "Boss", health: 440, waves: 0, encounter: "Sandbox" },
     "mega joe": { name: "Mega Joe", type: "Boss", health: 2000, waves: 0, encounter: "Sandbox" },
-    "baby": { name: "Baby", type: "???", health: 200, waves: 0, encounter: "Sandbox" },
-    "jetnuker": { name: "JetNuker", type: "???", health: 100, waves: 0, encounter: "Sandbox" },
+    "baby": { name: "Baby", type: "Elite Fodder", health: 200, waves: 0, encounter: "Sandbox" },
+    "jetnuker": { name: "JetNuker", type: "Elite Advanced", health: 100, waves: 0, encounter: "Sandbox" },
     "mart": { name: "Mart", type: "Boss", health: 3500, waves: 15, encounter: "Wave 4 siege" },
     "squad infantry": { name: "Squad Infantry", type: "Elite Fodder", health: 200, waves: 0, encounter: "Sandbox" },
     "old apu": { name: "Old APU", type: "mech", health: 2000, waves: 0, encounter: "Sandbox" },
@@ -210,7 +210,10 @@ function resetToWaveOne() {
 function makeRandomGuess() {
     if (gameOver || isWaveClear) return;
 
-    const availableKeys = enemyKeys.filter(key => !guessedEnemiesList.includes(key));
+    const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+    const availableKeys = enemyKeys.filter(key =>
+        !guessedEnemiesList.includes(key) && (!assassin || enemyDatabase[key].name !== assassin.name)
+    );
     if (availableKeys.length === 0) return;
 
     const randomKey = availableKeys[Math.floor(Math.random() * availableKeys.length)];
@@ -223,8 +226,11 @@ window.makeRandomGuess = makeRandomGuess;
 function makeRandomWrongGuess() {
     if (gameOver || isWaveClear) return;
 
+    const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
     const availableKeys = enemyKeys.filter(key =>
-        !guessedEnemiesList.includes(key) && enemyDatabase[key].name !== secretEnemy.name
+        !guessedEnemiesList.includes(key) &&
+        enemyDatabase[key].name !== secretEnemy.name &&
+        (!assassin || enemyDatabase[key].name !== assassin.name)
     );
     if (availableKeys.length === 0) return;
 
