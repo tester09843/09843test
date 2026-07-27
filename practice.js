@@ -225,7 +225,7 @@ function resetToWaveOne() {
     currentWave = 1;
     waveGuessHistory = {};
     if (typeof Modifiers !== "undefined") {
-        Modifiers.extraLifeAvailable = undefined;
+        Modifiers.extraLifeCharges = undefined;
     }
     initializeGameSession();
 }
@@ -306,6 +306,50 @@ function makeAccurateRadarGuess() {
 
 window.makeAccurateRadarGuess = makeAccurateRadarGuess;
 
+function applyAimAssist(originalKey) {
+    if (typeof Modifiers === "undefined" || !Modifiers.active.has("aimAssist")) return originalKey;
+
+    const guessedEnemy = enemyDatabase[originalKey];
+    if (!guessedEnemy || guessedEnemy.name === secretEnemy.name) return originalKey;
+
+    const healthPartial = guessedEnemy.health !== secretEnemy.health &&
+        Math.abs(guessedEnemy.health - secretEnemy.health) <= 50;
+    const wavesPartial = guessedEnemy.waves !== secretEnemy.waves &&
+        Math.abs(guessedEnemy.waves - secretEnemy.waves) <= 6;
+
+    const lowerOrder = encounterOrder.map(item => item.toLowerCase());
+    const guessedIdx = lowerOrder.indexOf(guessedEnemy.encounter.toLowerCase());
+    const secretIdx = lowerOrder.indexOf(secretEnemy.encounter.toLowerCase());
+    const encounterPartial = guessedEnemy.encounter.toLowerCase() !== secretEnemy.encounter.toLowerCase() &&
+        guessedIdx !== -1 && secretIdx !== -1 && Math.abs(guessedIdx - secretIdx) <= 2;
+
+    if (!healthPartial && !wavesPartial && !encounterPartial) return originalKey;
+
+    if (Modifiers.isBuffed("aimAssist")) {
+        const secretKey = Object.keys(enemyDatabase).find(key => enemyDatabase[key].name === secretEnemy.name);
+        return secretKey || originalKey;
+    }
+
+    const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+    const vitacharged = typeof window.getVitachargedEnemies === "function" ? window.getVitachargedEnemies() : null;
+
+    const candidates = enemyKeys.filter(key => {
+        if (guessedEnemiesList.includes(key)) return false;
+        const enemy = enemyDatabase[key];
+        if (enemy.name === guessedEnemy.name) return false;
+        if (assassin && enemy.name === assassin.name) return false;
+        if (vitacharged && vitacharged.has(key)) return false;
+
+        const healthMatch = healthPartial && enemy.health === secretEnemy.health;
+        const wavesMatch = wavesPartial && enemy.waves === secretEnemy.waves;
+        const encounterMatch = encounterPartial && enemy.encounter.toLowerCase() === secretEnemy.encounter.toLowerCase();
+        return healthMatch || wavesMatch || encounterMatch;
+    });
+
+    if (candidates.length === 0) return originalKey;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 window.setMaxGuesses = function(n) {
     MAX_GUESSES = n;
 };
@@ -331,13 +375,13 @@ window.applyPracticeModifiers = function() {
 function tryUseExtraLife(reasonText) {
     if (typeof Modifiers === "undefined") return false;
     if (!Modifiers.active.has("extraLife")) return false;
-    if (!Modifiers.extraLifeAvailable) return false;
+    if (!(Modifiers.extraLifeCharges > 0)) return false;
 
-    Modifiers.extraLifeAvailable = false;
+    Modifiers.extraLifeCharges -= 1;
 
     const messageElement = document.getElementById("gameMessage");
     if (messageElement) {
-        messageElement.innerText = `EXTRA LIFE USED! ${reasonText} Target was: ${secretEnemy.name}, You move on to the next wave anyway.`;
+        messageElement.innerText = `EXTRA LIFE USED! ${reasonText} You move on to the next wave anyway. (${Modifiers.extraLifeCharges} left)`;
         messageElement.style.color = "#33ff66";
     }
 
@@ -460,7 +504,7 @@ function showFilteredOptions() {
 function submitGuess() {
     if (gameOver || isWaveClear || !inputElement) return;
 
-    const guessName = inputElement.value.trim().toLowerCase();
+    let guessName = inputElement.value.trim().toLowerCase();
     const messageElement = document.getElementById("gameMessage");
 
     if (!enemyDatabase[guessName]) {
@@ -470,6 +514,8 @@ function submitGuess() {
         }
         return;
     }
+
+    guessName = applyAimAssist(guessName);
 
     if (messageElement) messageElement.innerText = "";
     guessCount++;

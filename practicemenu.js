@@ -11,7 +11,8 @@ const PRACTICE_MODIFIERS = [
     { key: "mutilatedDeaths", name: "Mutilated Deaths" },
     { key: "strengthenedSignal", name: "Strengthened Signal" },
     { key: "accurateRadar", name: "Accurate Radar" },
-    { key: "extraLife", name: "Extra Life" }
+    { key: "extraLife", name: "Extra Life" },
+    { key: "aimAssist", name: "Aim Assist" }
 ];
 
 const PRACTICE_ENEMIES = [

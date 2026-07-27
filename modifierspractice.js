@@ -347,10 +347,11 @@ const practiceDefinitions = {
     },
     strengthenedSignal: {
         name: "Strengthened Signal",
-        description: "You get 7 guesses instead of 6.",
-        onStart: () => {
+        description: "You get 7 guesses instead of 6. Vitaraged: 8 guesses instead of 6.",
+        onStart: (engine, key) => {
+            const buffed = engine && engine.isBuffed(key);
             if (typeof window.setMaxGuesses === "function") {
-                window.setMaxGuesses(7);
+                window.setMaxGuesses(buffed ? 8 : 7);
             }
         },
         onReset: () => {
@@ -361,11 +362,15 @@ const practiceDefinitions = {
     },
     accurateRadar: {
         name: "Accurate Radar",
-        description: "Automatically submits a random wrong guess on wave start, with at least 1 stat guaranteed to show green.",
-        onStart: () => {
+        description: "Automatically submits a random wrong guess on wave start, with at least 1 stat guaranteed to show green. Vitaraged: submits 2 such guesses instead of 1.",
+        onStart: (engine, key) => {
+            const buffed = engine && engine.isBuffed(key);
             window.__autoGuessInProgress = true;
             if (typeof window.makeAccurateRadarGuess === "function") {
                 window.makeAccurateRadarGuess();
+                if (buffed) {
+                    window.makeAccurateRadarGuess();
+                }
             }
             window.__autoGuessInProgress = false;
         },
@@ -373,12 +378,19 @@ const practiceDefinitions = {
     },
     extraLife: {
         name: "Extra Life",
-        description: "If you'd fail (out of guesses, assassinated, or Security Protocol running out), it's canceled once for the whole practice run and you move on to the next wave anyway. Only 1 use total.",
-        onStart: (engine) => {
-            if (typeof engine.extraLifeAvailable !== "boolean") {
-                engine.extraLifeAvailable = true;
+        description: "If you'd fail (out of guesses, assassinated, or Security Protocol running out), it's canceled and you move on to the next wave anyway. Only 1 use total. Vitaraged: 2 uses total.",
+        onStart: (engine, key) => {
+            const buffed = engine && engine.isBuffed(key);
+            if (typeof engine.extraLifeCharges !== "number") {
+                engine.extraLifeCharges = buffed ? 2 : 1;
             }
         },
+        onReset: () => {}
+    },
+    aimAssist: {
+        name: "Aim Assist",
+        description: "If a guess would show a yellow stat, it's automatically swapped for a different guess that turns that stat green. Vitaraged: any yellow stat instead makes the guess fully correct.",
+        onStart: () => {},
         onReset: () => {}
     }
 };
