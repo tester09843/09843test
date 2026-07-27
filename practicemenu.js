@@ -251,6 +251,9 @@ document.addEventListener("DOMContentLoaded", () => {
             .filter(cb => cb.checked)
             .map(cb => cb.dataset.key);
 
+        const randomizeCheckbox = document.getElementById("randomizeModifiersCheckbox");
+        const randomize = !!(randomizeCheckbox && randomizeCheckbox.checked);
+
         let warning = document.getElementById("enemyRosterWarning");
 
         if (roster.length === 0) {
@@ -266,7 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (warning) warning.remove();
 
-        localStorage.setItem("practiceModifierConfig", JSON.stringify({ enabled, vitaraged }));
+        localStorage.setItem("practiceModifierConfig", JSON.stringify({ enabled, vitaraged, randomize }));
         localStorage.setItem("practiceEnemyRoster", JSON.stringify(roster));
         window.location.href = "practice.html";
     });

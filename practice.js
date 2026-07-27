@@ -12,9 +12,12 @@ const enemyDatabase = {
     "tranquilizer": { name: "Tranquilizer", type: "Advanced", health: 100, waves: 8, encounter: "Wave 2 epilogue" },
     "medic": { name: "Medic", type: "Advanced", health: 200, waves: 10, encounter: "Wave 2 epilogue" },
     "engineer": { name: "Engineer", type: "Advanced", health: 150, waves: 14, encounter: "Wave 4 siege" },
-    "level 1 building": { name: "Level 1 Building", type: "Mech", health: 300, waves: 14, encounter: "Wave 4 siege" },
-    "level 2 building": { name: "Level 2 Building", type: "Mech", health: 450, waves: 14, encounter: "Wave 4 siege" },
-    "level 3 building": { name: "Level 3 Building", type: "Mech", health: 600, waves: 14, encounter: "Wave 4 siege" },
+    "level 1 sentry": { name: "Level 1 Sentry", type: "Mech", health: 300, waves: 14, encounter: "Wave 4 siege" },
+    "level 2 sentry": { name: "Level 2 Sentry", type: "Mech", health: 450, waves: 14, encounter: "Wave 4 siege" },
+    "level 3 sentry": { name: "Level 3 Sentry", type: "Mech", health: 600, waves: 14, encounter: "Wave 4 siege" },
+    "level 1 teleporter": { name: "Level 1 teleporter", type: "Mech", health: 300, waves: 14, encounter: "Wave 4 siege" },
+    "level 2 teleporter": { name: "Level 2 teleporter", type: "Mech", health: 450, waves: 14, encounter: "Wave 4 siege" },
+    "level 3 teleporter": { name: "Level 3 teleporter", type: "Mech", health: 600, waves: 14, encounter: "Wave 4 siege" },
     "ranger": { name: "Ranger", type: "Mech", health: 150, waves: 16, encounter: "Wave 3 siege" },
     "apu": { name: "APU", type: "Mech", health: 900, waves: 22, encounter: "Wave 4 siege" },
     "apu operator": { name: "APU Operator", type: "Advanced", health: 375, waves: 22, encounter: "Wave 4 siege" },
@@ -59,7 +62,8 @@ const enemyDatabase = {
     "drone": { name: "Drone", type: "Boss", health: 75, waves: 9, encounter: "Wave 9 siege" },
     "zeus": { name: "Zeus", type: "Boss", health: 545, waves: 2, encounter: "Wave 9 siege" },
     "dreadnought": { name: "Dreadnought", type: "Boss", health: 16000, waves: 2, encounter: "Wave 10 siege" },
-    "dreadnought armor": { name: "Dreadnought Armor", type: "Boss", health: 2000, waves: 2, encounter: "Wave 10 siege" },
+    "dreadnought armor (backpack)": { name: "Dreadnought Armor (Backpack)", type: "Boss", health: 2000, waves: 2, encounter: "Wave 10 siege" },
+    "dreadnought armor (head)": { name: "Dreadnought Armor (Head)", type: "Boss", health: 1500, waves: 2, encounter: "Wave 10 siege" },
     "chassis": { name: "Chassis", type: "Boss", health: 1300, waves: 1, encounter: "Wave 10 mastermind" },
     "mastermind": { name: "Mastermind", type: "Boss", health: 125, waves: 1, encounter: "Wave 10 mastermind" },
     "ares": { name: "Ares", type: "Boss", health: 1000, waves: 2, encounter: "Wave 3 epilogue" },
@@ -351,19 +355,29 @@ window.setMaxGuesses = function(n) {
 };
 
 window.applyPracticeModifiers = function() {
-    let config = { enabled: [], vitaraged: [] };
+    let config = { enabled: [], vitaraged: [], randomize: false };
     try {
         const stored = localStorage.getItem("practiceModifierConfig");
         if (stored) {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed.enabled)) config.enabled = parsed.enabled;
             if (Array.isArray(parsed.vitaraged)) config.vitaraged = parsed.vitaraged;
+            if (typeof parsed.randomize === "boolean") config.randomize = parsed.randomize;
         }
     } catch (e) {
-        config = { enabled: [], vitaraged: [] };
+        config = { enabled: [], vitaraged: [], randomize: false };
     }
 
-    if (typeof Modifiers !== "undefined") {
+    if (typeof Modifiers === "undefined") return;
+
+    if (config.randomize) {
+        // Only draw from the modifiers the user selected, but let the engine
+        // pick how many appear and which ones, using the same wave-based
+        // formula and vitarage-forcing rule Classic mode uses.
+        Modifiers.allowedKeys = config.enabled;
+        Modifiers.evaluateWave(currentWave);
+    } else {
+        Modifiers.allowedKeys = null;
         Modifiers.applyFixedModifiers(config.enabled, new Set(config.vitaraged));
     }
 };
@@ -436,12 +450,14 @@ window.handleAssassinGuess = function(assassinEnemy) {
     }
 };
 
-window.handleMutilatedDeathsFail = function() {
+window.handleMutilatedDeathsFail = function(buffed) {
     if (gameOver || isWaveClear) return;
 
     const messageElement = document.getElementById("gameMessage");
     if (messageElement) {
-        messageElement.innerText = `MUTILATED! That wrong guess was fatal. Target was: ${secretEnemy.name}. You reached Wave ${currentWave} before failing.`;
+        messageElement.innerText = buffed
+            ? "No."
+            : `MUTILATED! That wrong guess was fatal. Target was: ${secretEnemy.name}. You reached Wave ${currentWave} before failing.`;
         messageElement.style.color = "#ff3333";
     }
 

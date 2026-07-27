@@ -335,13 +335,21 @@ const practiceDefinitions = {
     },
     mutilatedDeaths: {
         name: "Mutilated Deaths",
-        description: "One wrong guess and you fail instantly. Guesses forced by Jammed Radar don't count.",
-        onGuess: (row, guessedEnemy, secretEnemy) => {
+        description: "One wrong guess and you fail instantly. Guesses forced by Jammed Radar don't count. Vitaraged: you fail immediately at the start of the wave — you don't even get to guess.",
+        onStart: (engine, key) => {
+            if (engine && engine.isBuffed(key)) {
+                if (typeof window.handleMutilatedDeathsFail === "function") {
+                    window.handleMutilatedDeathsFail(true);
+                }
+            }
+        },
+        onGuess: (row, guessedEnemy, secretEnemy, engine, key) => {
             if (guessedEnemy.name === secretEnemy.name) return;
             if (window.__autoGuessInProgress) return;
 
             if (typeof window.handleMutilatedDeathsFail === "function") {
-                window.handleMutilatedDeathsFail();
+                const buffed = !!(engine && engine.isBuffed(key));
+                window.handleMutilatedDeathsFail(buffed);
             }
         }
     },

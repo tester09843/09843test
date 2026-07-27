@@ -8,6 +8,7 @@ class ModifierEngine {
         this.buffedModifiers = new Set();
         this.securityProtocolWrongGuesses = 0;
         this.expandedModifierKey = null;
+        this.allowedKeys = null; // when set, evaluateWave only picks from these keys
     }
 
     isBuffed(key) {
@@ -96,7 +97,7 @@ class ModifierEngine {
         this.buffedModifiers = new Set([...(buffedKeys || [])].filter(key => this.active.has(key)));
         this.renderBadges();
 
-        const priorityOrder = ["vitarage", "assassin", "vitacharge"];
+        const priorityOrder = ["vitarage", "mutilatedDeaths", "assassin", "vitacharge"];
         const orderedKeys = [
             ...priorityOrder.filter(key => this.active.has(key)),
             ...validKeys.filter(key => !priorityOrder.includes(key))
@@ -116,6 +117,9 @@ class ModifierEngine {
             ? this.waveCounts(waveNumber)
             : (this.waveCounts[waveNumber] ?? 1);
         let pool = Object.keys(this.definitions);
+        if (this.allowedKeys) {
+            pool = pool.filter(key => this.allowedKeys.includes(key));
+        }
 
         if (targetCount <= 1) {
             pool = pool.filter(key => key !== "vitarage");
@@ -127,7 +131,7 @@ class ModifierEngine {
             ? this.forceVitarage(waveNumber)
             : this.forceVitarage;
 
-        if (forceVitarageNow && targetCount >= 1 && this.definitions.vitarage) {
+        if (forceVitarageNow && targetCount >= 1 && this.definitions.vitarage && pool.includes("vitarage")) {
             selectedKeys.push("vitarage");
             pool = pool.filter(key => key !== "vitarage");
         }
@@ -150,7 +154,7 @@ class ModifierEngine {
         // assassin and vitacharge must resolve before anything that can trigger
         // a guess (e.g. Jammed Radar), so that guess can never target the
         // assassin or a vitacharged enemy.
-        const priorityOrder = ["vitarage", "assassin", "vitacharge"];
+        const priorityOrder = ["vitarage", "mutilatedDeaths", "assassin", "vitacharge"];
         const orderedKeys = [
             ...priorityOrder.filter(key => selectedKeys.includes(key)),
             ...selectedKeys.filter(key => !priorityOrder.includes(key))
