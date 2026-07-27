@@ -86,6 +86,30 @@ class ModifierEngine {
         }
     }
 
+    applyFixedModifiers(selectedKeys, buffedKeys) {
+        this.clearTimer();
+        this.securityProtocolWrongGuesses = 0;
+        this.expandedModifierKey = null;
+
+        const validKeys = selectedKeys.filter(key => this.definitions[key]);
+        this.active = new Set(validKeys);
+        this.buffedModifiers = new Set([...(buffedKeys || [])].filter(key => this.active.has(key)));
+        this.renderBadges();
+
+        const priorityOrder = ["vitarage", "assassin", "vitacharge"];
+        const orderedKeys = [
+            ...priorityOrder.filter(key => this.active.has(key)),
+            ...validKeys.filter(key => !priorityOrder.includes(key))
+        ];
+
+        orderedKeys.forEach(key => {
+            const def = this.definitions[key];
+            if (def && def.onStart) {
+                def.onStart(this, key);
+            }
+        });
+    }
+
     evaluateWave(waveNumber) {
         this.currentWave = waveNumber;
         const targetCount = typeof this.waveCounts === "function"
