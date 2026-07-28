@@ -76,12 +76,37 @@ const enemyDatabase = {
     "old apu": { name: "Old APU", type: "Mech", health: 2000, waves: 0, encounter: "Sandbox" },
     "operator": { name: "Operator", type: "Advanced", health: 200, waves: 0, encounter: "Sandbox" },
     "apc": { name: "APC", type: "Mech", health: 2500, waves: 0, encounter: "Sandbox" },
+    "achilles (ht)": { name: "Achilles (Ht)", type: "Boss", health: 280, waves: 0, encounter: "Sandbox" },
+    "prometheustest": { name: "PrometheusTest", type: "Boss", health: 750, waves: 0, encounter: "Sandbox" },
+    "sprayer kit": { name: "Sprayer Kit", type: "Item", health: 1300, waves: 0, encounter: "Sandbox" },
+    "turret kit": { name: "Turret Kit", type: "Item", health: 1300, waves: 0, encounter: "Sandbox" },
+    "mads kit": { name: "MADS Kit", type: "Item", health: 500, waves: 0, encounter: "Sandbox" },
+    "dummy infantry": { name: "Dummy Infantry", type: "Fodder", health: 100, waves: 0, encounter: "Sandbox" },
+    "dummy cloaker": { name: "Dummy Cloaker", type: "Fodder", health: 100, waves: 0, encounter: "Sandbox" },
+    "dummy shielder": { name: "Dummy Shielder", type: "Fodder", health: 110, waves: 0, encounter: "Sandbox" },
+    "dummy saboteur": { name: "Dummy Saboteur", type: "Fodder", health: 100, waves: 0, encounter: "Sandbox" },
+    "dummy grenadier": { name: "Dummy Grenadier", type: "Advanced", health: 180, waves: 0, encounter: "Sandbox" },
+    "dummy jetpacker": { name: "Dummy Jetpacker", type: "Advanced", health: 100, waves: 0, encounter: "Sandbox" },
+    "dummy gunner": { name: "Dummy Gunner", type: "Advanced", health: 350, waves: 0, encounter: "Sandbox" },
+    "dummy sniper": { name: "Dummy Sniper", type: "Advanced", health: 100, waves: 0, encounter: "Sandbox" },
+    "dummy tranquilizer": { name: "Dummy Tranquilizer", type: "Advanced", health: 100, waves: 0, encounter: "Sandbox" },
+    "dummy medic": { name: "Dummy Medic", type: "Advanced", health: 200, waves: 0, encounter: "Sandbox" },
+    "dummy apu": { name: "Dummy APU", type: "Mech", health: 900, waves: 0, encounter: "Sandbox" },
+    "dummy tank": { name: "Dummy Tank", type: "Mech", health: 3500, waves: 0, encounter: "Sandbox" },
+    "dummy platform": { name: "Dummy Platform", type: "Mech", health: 7500, waves: 0, encounter: "Sandbox" },
+    "dummy combatant": { name: "Dummy Combatant", type: "Elite Fodder", health: 100, waves: 0, encounter: "Sandbox" },
+    "dummy informant": { name: "Dummy Informant", type: "Elite Fodder", health: 150, waves: 0, encounter: "Sandbox" },
+    "dummy confidant": { name: "Dummy Confidant", type: "Elite Fodder", health: 200, waves: 0, encounter: "Sandbox" },
+    "dummy agitator": { name: "Dummy Agitator", type: "Elite Fodder", health: 300, waves: 0, encounter: "Sandbox" },
+    "dummy jagant": { name: "Dummy Jagant", type: "Elite Fodder", health: 150, waves: 0, encounter: "Sandbox" },
+    "dummy bombardier": { name: "Dummy Bombardier", type: "Elite Fodder", health: 350, waves: 0, encounter: "Sandbox" },
+    "dummy operant": { name: "Dummy Operant", type: "Elite Fodder", health: 300, waves: 0, encounter: "Sandbox" },
 };
 
 const encounterOrder = [
     "Wave 1 siege", "Wave 2 siege", "Wave 3 siege", "Wave 4 siege", "Wave 5 siege",
     "Wave 6 siege", "Wave 7 siege", "Wave 8 siege", "Wave 9 siege", "Wave 10 siege",
-    "Wave 10 mastermind", "Wave 1 epilogue", "Wave 2 epilogue", "Wave 3 epilogue", "Wave 10 hell", "sandbox"
+    "Wave 10 mastermind", "Wave 1 epilogue", "Wave 2 epilogue", "Wave 3 epilogue", "Wave 10 hell", "Sandbox"
 ];
 
 window.encounterOrder = encounterOrder;
@@ -91,23 +116,7 @@ window.getSecretEnemy = function() {
     return secretEnemy;
 };
 
-function loadEnemyRoster() {
-    try {
-        const stored = localStorage.getItem("practiceEnemyRoster");
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed)) {
-                const filtered = parsed.filter(key => enemyDatabase[key]);
-                if (filtered.length > 0) return filtered;
-            }
-        }
-    } catch (e) {
-        // fall through to the full roster
-    }
-    return Object.keys(enemyDatabase);
-}
-
-let enemyKeys = loadEnemyRoster();
+const enemyKeys = Object.keys(enemyDatabase);
 window.enemyKeys = enemyKeys;
 let secretEnemy;
 let gameOver = false;
@@ -209,8 +218,7 @@ function initializeGameSession() {
     if (tbody) tbody.innerHTML = "";
 
     if (typeof Modifiers !== "undefined") {
-        Modifiers.currentWave = currentWave;
-        window.applyPracticeModifiers();
+        Modifiers.evaluateWave(currentWave);
     }
 }
 
@@ -356,34 +364,6 @@ window.addExtraGuessCount = function(n) {
     guessCount += n;
 };
 
-window.applyPracticeModifiers = function() {
-    let config = { enabled: [], vitaraged: [], randomize: false };
-    try {
-        const stored = localStorage.getItem("practiceModifierConfig");
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed.enabled)) config.enabled = parsed.enabled;
-            if (Array.isArray(parsed.vitaraged)) config.vitaraged = parsed.vitaraged;
-            if (typeof parsed.randomize === "boolean") config.randomize = parsed.randomize;
-        }
-    } catch (e) {
-        config = { enabled: [], vitaraged: [], randomize: false };
-    }
-
-    if (typeof Modifiers === "undefined") return;
-
-    if (config.randomize) {
-        // Only draw from the modifiers the user selected, but let the engine
-        // pick how many appear and which ones, using the same wave-based
-        // formula and vitarage-forcing rule Classic mode uses.
-        Modifiers.allowedKeys = config.enabled;
-        Modifiers.evaluateWave(currentWave);
-    } else {
-        Modifiers.allowedKeys = null;
-        Modifiers.applyFixedModifiers(config.enabled, new Set(config.vitaraged));
-    }
-};
-
 function tryUseExtraLife(reasonText) {
     if (typeof Modifiers === "undefined") return false;
     if (!Modifiers.active.has("extraLife")) return false;
@@ -459,7 +439,7 @@ window.handleMutilatedDeathsFail = function(buffed) {
     if (messageElement) {
         messageElement.innerText = buffed
             ? "No."
-            : `MUTILATED! Target was: ${secretEnemy.name}. You reached Wave ${currentWave} before failing.`;
+            : `MUTILATED! That wrong guess was fatal. Target was: ${secretEnemy.name}. You reached Wave ${currentWave} before failing.`;
         messageElement.style.color = "#ff3333";
     }
 
