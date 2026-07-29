@@ -408,6 +408,7 @@ const practiceDefinitions = {
     chubbyTroops: {
         name: "Chubby Troops",
         description: "Practice mode exclusive. 1/3rd of the units in the pool take up 2 guesses instead of 1 when guessed. Vitaraged: 3 guesses instead of 1.",
+        runLast: true,
         onStart: (engine) => {
             const pool = window.enemyKeys || [];
             const shuffled = [...pool].sort(() => Math.random() - 0.5);

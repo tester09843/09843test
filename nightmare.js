@@ -598,8 +598,20 @@ function submitGuess() {
         wrapper.appendChild(textSpan);
         td.appendChild(wrapper);
 
+        const isDummyName = name => name.toLowerCase().startsWith("dummy ");
+        const isOldName = name => name.toLowerCase().startsWith("old ");
+
+        const pdcGroup = new Set(["pdc kit", "governor kit", "old pdc", "mads kit", "vehicle pdc", "adc", "sprayer kit", "turret kit"]);
+        const isPdcGroupName = name => pdcGroup.has(name.toLowerCase());
+
         if (guessedEnemy.name === targetEnemy.name) {
             td.classList.add("cell-correct");
+        } else if (isDummyName(guessedEnemy.name) && isDummyName(targetEnemy.name)) {
+            td.classList.add("cell-partial");
+        } else if (isOldName(guessedEnemy.name) && isOldName(targetEnemy.name)) {
+            td.classList.add("cell-partial");
+        } else if (isPdcGroupName(guessedEnemy.name) && isPdcGroupName(targetEnemy.name)) {
+            td.classList.add("cell-partial");
         } else {
             td.classList.add("cell-incorrect");
         }
