@@ -297,10 +297,6 @@ const nightmareDefinitions = {
             engine.buffedModifiers = new Set();
             let candidates = [...engine.active].filter(key => key !== "vitarage");
 
-            if (engine.active.has("jammedRadar")) {
-                candidates = candidates.filter(key => key !== "weakenedSignal");
-            }
-
             if (candidates.length > 0) {
                 const wave = engine.currentWave || 1;
                 let maxBuffs = 1;
