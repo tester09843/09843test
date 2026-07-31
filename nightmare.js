@@ -4,10 +4,8 @@ const enemyDatabase = {
     "cloaker": { name: "Cloaker", type: "Fodder", health: 100, waves: 29, encounter: "Wave 1 siege" },
     "shielder": { name: "Shielder", type: "Fodder", health: 110, waves: 30, encounter: "Wave 2 siege" },
     "saboteur": { name: "Saboteur", type: "Fodder", health: 100, waves: 32, encounter: "Wave 2 siege" },
-    "sapper": { name: "Sapper", type: "Fodder", health: 0, waves: 32, encounter: "Wave 2 siege" },
     "landmine": { name: "Landmine", type: "Fodder", health: 20, waves: 32, encounter: "Wave 2 siege" },
     "administrator": { name: "Administrator", type: "Fodder", health: 100, waves: 1, encounter: "Wave 2 epilogue" },
-    "keycard": { name: "Keycard", type: "Item", health: 0, waves: 1, encounter: "Wave 2 epilogue" },
     "grenadier": { name: "Grenadier", type: "Advanced", health: 180, waves: 16, encounter: "Wave 4 siege" },
     "jetpacker": { name: "Jetpacker", type: "Advanced", health: 100, waves: 14, encounter: "Wave 5 siege" },
     "gunner": { name: "Gunner", type: "Advanced", health: 350, waves: 22, encounter: "Wave 5 siege" },
@@ -51,7 +49,6 @@ const enemyDatabase = {
     "daedalus": { name: "Daedalus", type: "Boss", health: 500, waves: 14, encounter: "Wave 3 siege" },
     "tempest": { name: "Tempest", type: "Boss", health: 600, waves: 14, encounter: "Wave 3 siege" },
     "lelantos": { name: "Lelantos", type: "Boss", health: 380, waves: 5, encounter: "Wave 3 siege" },
-    "lelantos decoy": { name: "Lelantos Decoy", type: "Boss", health: 1, waves: 5, encounter: "Wave 3 siege" },
     "gaia": { name: "Gaia", type: "Boss", health: 775, waves: 12, encounter: "Wave 6 siege" },
     "escort shielder": { name: "Escort Shielder", type: "Elite Fodder", health: 250, waves: 12, encounter: "Wave 6 siege" },
     "shield": { name: "Shield", type: "Elite Fodder", health: 250, waves: 12, encounter: "Wave 6 siege" },
@@ -117,7 +114,6 @@ const enemyDatabase = {
     "stonehedge kit": { name: "Stonehedge Kit", type: "Item", health: 1500, waves: 0, encounter: "Sandbox" },
     "fast": { name: "FAST", type: "Item", health: 200, waves: 0, encounter: "Sandbox" },
     "tripwire trip": { name: "Tripwire trip", type: "Item", health: 0, waves: 0, encounter: "Sandbox" },
-    "lifeline": { name: "Lifeline", type: "Item", health: 1500, waves: 0, encounter: "Sandbox" },
     "supplier": { name: "Supplier", type: "Advanced", health: 300, waves: 0, encounter: "Sandbox" },
     "artillery": { name: "Artillery", type: "Mech", health: 1000000, waves: 0, encounter: "Sandbox" },
     "dummy infantry": { name: "Dummy Infantry", type: "Fodder", health: 100, waves: 0, encounter: "Sandbox" },
@@ -177,6 +173,58 @@ window.getSecretEnemy = function() {
 const enemyKeys = Object.keys(enemyDatabase);
 window.enemyKeys = enemyKeys;
 let secretEnemy;
+let secretEnemy2 = null;
+let secretEnemy3 = null;
+window.getSecondSecretEnemy = function() {
+    return secretEnemy2;
+};
+window.getThirdSecretEnemy = function() {
+    return secretEnemy3;
+};
+
+window.pickSecondTarget = function() {
+    const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+    const pool = enemyKeys.filter(key => {
+        const enemy = enemyDatabase[key];
+        if (enemy.name === secretEnemy.name) return false;
+        if (assassin && enemy.name === assassin.name) return false;
+        return true;
+    });
+    if (pool.length === 0) {
+        secretEnemy2 = null;
+        return;
+    }
+    const randomKey = pool[Math.floor(Math.random() * pool.length)];
+    secretEnemy2 = enemyDatabase[randomKey];
+    console.log(`Wave ${currentWave} second answer: ${secretEnemy2.name}`);
+};
+
+window.pickThirdTarget = function() {
+    const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+    const pool = enemyKeys.filter(key => {
+        const enemy = enemyDatabase[key];
+        if (enemy.name === secretEnemy.name) return false;
+        if (secretEnemy2 && enemy.name === secretEnemy2.name) return false;
+        if (assassin && enemy.name === assassin.name) return false;
+        return true;
+    });
+    if (pool.length === 0) {
+        secretEnemy3 = null;
+        return;
+    }
+    const randomKey = pool[Math.floor(Math.random() * pool.length)];
+    secretEnemy3 = enemyDatabase[randomKey];
+    console.log(`Wave ${currentWave} third answer: ${secretEnemy3.name}`);
+};
+
+window.clearSecondTarget = function() {
+    secretEnemy2 = null;
+};
+
+window.clearThirdTarget = function() {
+    secretEnemy3 = null;
+};
+
 let gameOver = false;
 let guessCount = 0;
 let MAX_GUESSES = 6;
@@ -249,6 +297,8 @@ function initializeGameSession() {
 
     secretEnemy = enemyDatabase[enemyKeys[Math.floor(Math.random() * enemyKeys.length)]];
     console.log(`Wave ${currentWave} answer: ${secretEnemy.name}`);
+    secretEnemy2 = null;
+    secretEnemy3 = null;
     gameOver = false;
     isWaveClear = false;
     guessCount = 0;
@@ -416,6 +466,115 @@ function applyAimAssist(originalKey) {
 
 window.setMaxGuesses = function(n) {
     MAX_GUESSES = n;
+};
+
+const SPLIT_COLORS = { correct: "#1b663b", partial: "#e6b800", incorrect: "#791a24" };
+
+// Category-cell helpers shared with modifiers.js definitions so they can
+// affect a specific category (and, with Double Trouble, a specific target
+// index) directly via structured data instead of scanning rendered text.
+// `side` is null for a normal single-target cell, or a 0-based target
+// index (0, 1, 2...) for a split cell with 2+ targets.
+window.applySplitBackground = function(td, statuses) {
+    td.classList.add("split-cell");
+    const count = statuses.length;
+    td.dataset.targetCount = String(count);
+    const stops = [];
+    statuses.forEach((status, i) => {
+        const color = SPLIT_COLORS[status];
+        td.dataset[`trueColor${i}`] = color;
+        const startPct = (100 * i / count).toFixed(2);
+        const endPct = (100 * (i + 1) / count).toFixed(2);
+        stops.push(`${color} ${startPct}%`, `${color} ${endPct}%`);
+    });
+    td.style.background = `linear-gradient(to right, ${stops.join(", ")})`;
+};
+
+window.redrawCategoryCell = function(td) {
+    let parts;
+    if (td.classList.contains("split-cell")) {
+        const count = parseInt(td.dataset.targetCount || "0", 10);
+        const arrows = [];
+        for (let i = 0; i < count; i++) {
+            if (td.dataset[`arrow${i}`]) arrows.push(td.dataset[`arrow${i}`]);
+        }
+        parts = [td.dataset.value, ...arrows];
+    } else {
+        parts = [td.dataset.value, td.dataset.arrow].filter(part => part);
+    }
+    let text = parts.filter(part => part !== undefined && part !== "").join(" ");
+    if (td.dataset.warning === "true") text += " ⚠";
+    td.innerText = text;
+};
+
+window.flipArrowChar = function(arrow) {
+    const flipMap = { "↑": "↓", "↓": "↑", "→": "←", "←": "→" };
+    return flipMap[arrow] || arrow;
+};
+
+window.flipCellArrow = function(td, side) {
+    const key = (side === null || side === undefined) ? "arrow" : `arrow${side}`;
+    if (!td.dataset[key]) return;
+    td.dataset[key] = window.flipArrowChar(td.dataset[key]);
+    window.redrawCategoryCell(td);
+};
+
+window.blankCellArrow = function(td, side) {
+    const key = (side === null || side === undefined) ? "arrow" : `arrow${side}`;
+    if (!td.dataset[key]) return;
+    td.dataset[key] = "";
+    window.redrawCategoryCell(td);
+};
+
+window.setCellFakeStatus = function(td, status, side) {
+    if (td.classList.contains("split-cell")) {
+        const count = parseInt(td.dataset.targetCount || "0", 10);
+        const stops = [];
+        for (let i = 0; i < count; i++) {
+            const color = i === side ? SPLIT_COLORS[status] : (td.dataset[`trueColor${i}`] || SPLIT_COLORS.incorrect);
+            const startPct = (100 * i / count).toFixed(2);
+            const endPct = (100 * (i + 1) / count).toFixed(2);
+            stops.push(`${color} ${startPct}%`, `${color} ${endPct}%`);
+        }
+        td.style.background = `linear-gradient(to right, ${stops.join(", ")})`;
+    } else {
+        td.classList.remove("cell-correct", "cell-incorrect", "cell-partial");
+        td.classList.add(`cell-${status}`);
+    }
+};
+
+// Returns the eligible (category, side) slots a modifier can affect for this
+// guess: one slot per non-exact category normally, or one slot per
+// non-exact target index per category when Double Trouble is active
+// (2 targets normally, 3 when Vitaraged).
+window.getEligibleCategorySlots = function(row, guessedEnemy, secretEnemy) {
+    const secretEnemy2 = typeof window.getSecondSecretEnemy === "function" ? window.getSecondSecretEnemy() : null;
+    const secretEnemy3 = typeof window.getThirdSecretEnemy === "function" ? window.getThirdSecretEnemy() : null;
+    const doubleTrouble = typeof Modifiers !== "undefined" && Modifiers.active.has("doubleTrouble") && !!secretEnemy2;
+    const targets = doubleTrouble ? [secretEnemy, secretEnemy2, ...(secretEnemy3 ? [secretEnemy3] : [])] : [secretEnemy];
+
+    const guessedEncounter = guessedEnemy.encounter.toLowerCase();
+    const fieldDefs = [
+        { cls: "cell-health", guessedVal: guessedEnemy.health, targetVal: t => t.health },
+        { cls: "cell-waves", guessedVal: guessedEnemy.waves, targetVal: t => t.waves },
+        { cls: "cell-encounter", guessedVal: guessedEncounter, targetVal: t => t.encounter.toLowerCase() }
+    ];
+
+    const slots = [];
+    fieldDefs.forEach(field => {
+        const cell = row.querySelector(`.${field.cls}`);
+        if (!cell) return;
+        if (targets.length > 1) {
+            targets.forEach((target, i) => {
+                if (field.guessedVal !== field.targetVal(target)) {
+                    slots.push({ cell, side: i, cls: field.cls });
+                }
+            });
+        } else if (field.guessedVal !== field.targetVal(targets[0])) {
+            slots.push({ cell, side: null, cls: field.cls });
+        }
+    });
+    return slots;
 };
 
 window.addExtraGuessCount = function(n) {
@@ -638,58 +797,161 @@ function submitGuess() {
     function createNumericCell(guessedValue, targetValue, threshold, extraClass = "") {
         const td = document.createElement("td");
         if (extraClass) td.classList.add(extraClass);
+        td.dataset.value = guessedValue;
 
         if (guessedValue === targetValue) {
-            td.innerText = guessedValue;
+            td.dataset.arrow = "";
             td.classList.add("cell-correct");
         } else {
-            const arrow = guessedValue < targetValue ? " ↑" : " ↓";
-            td.innerText = guessedValue + arrow;
-
+            td.dataset.arrow = guessedValue < targetValue ? "↑" : "↓";
             const difference = Math.abs(guessedValue - targetValue);
-            if (difference <= threshold) {
-                td.classList.add("cell-partial");
-            } else {
-                td.classList.add("cell-incorrect");
-            }
+            td.classList.add(difference <= threshold ? "cell-partial" : "cell-incorrect");
         }
+        window.redrawCategoryCell(td);
         return td;
     }
 
     function createEncounterCell(guessedEncounter, targetEncounter, threshold, extraClass = "") {
         const td = document.createElement("td");
         if (extraClass) td.classList.add(extraClass);
+        td.dataset.value = guessedEncounter;
 
         const lowerCaseOrder = encounterOrder.map(item => item.toLowerCase());
         const guessedIndex = lowerCaseOrder.indexOf(guessedEncounter.toLowerCase());
         const targetIndex = lowerCaseOrder.indexOf(targetEncounter.toLowerCase());
 
         if (guessedIndex === targetIndex) {
-            td.innerText = guessedEncounter;
+            td.dataset.arrow = "";
             td.classList.add("cell-correct");
         } else {
-            const arrow = guessedIndex < targetIndex ? " →" : " ←";
-            td.innerText = guessedEncounter + arrow;
-
+            td.dataset.arrow = guessedIndex < targetIndex ? "→" : "←";
             const difference = Math.abs(guessedIndex - targetIndex);
-            if (guessedIndex !== -1 && targetIndex !== -1 && difference <= threshold) {
-                td.classList.add("cell-partial");
-            } else {
-                td.classList.add("cell-incorrect");
-            }
+            td.classList.add((guessedIndex !== -1 && targetIndex !== -1 && difference <= threshold) ? "cell-partial" : "cell-incorrect");
         }
+        window.redrawCategoryCell(td);
         return td;
     }
 
-    row.appendChild(createNameCell(guessedEnemy, secretEnemy));
-    row.appendChild(createCell(guessedEnemy.type, secretEnemy.type, guessedEnemy.type, "cell-type"));
-    row.appendChild(createNumericCell(guessedEnemy.health, secretEnemy.health, 50, "cell-health"));
-    row.appendChild(createNumericCell(guessedEnemy.waves, secretEnemy.waves, 6, "cell-waves"));
-    row.appendChild(createEncounterCell(guessedEnemy.encounter, secretEnemy.encounter, 2, "cell-encounter"));
+    function nameMatchStatus(guessedEnemy, target) {
+        const isDummyName = name => name.toLowerCase().startsWith("dummy ");
+        const isOldName = name => name.toLowerCase().startsWith("old ");
+        const pdcGroup = new Set(["pdc kit", "governor kit", "old pdc", "mads kit", "vehicle pdc", "adc", "sprayer kit", "turret kit"]);
+        const isPdcGroupName = name => pdcGroup.has(name.toLowerCase());
+
+        if (guessedEnemy.name === target.name) return "correct";
+        if (isDummyName(guessedEnemy.name) && isDummyName(target.name)) return "partial";
+        if (isOldName(guessedEnemy.name) && isOldName(target.name)) return "partial";
+        if (isPdcGroupName(guessedEnemy.name) && isPdcGroupName(target.name)) return "partial";
+        return "incorrect";
+    }
+
+    function createSplitNameCell(guessedEnemy, targets) {
+        const td = document.createElement("td");
+        td.className = "name-cell cell-name";
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "name-cell-wrapper";
+
+        const img = document.createElement("img");
+        const key = guessedEnemy.name.toLowerCase();
+        img.src = `images/enemies/${key.replace(/\s+/g, '-')}.png`;
+        img.alt = guessedEnemy.name;
+        img.className = "table-enemy-icon";
+        img.onerror = function() { this.style.display = "none"; };
+
+        const textSpan = document.createElement("span");
+        textSpan.innerText = guessedEnemy.name;
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(textSpan);
+        td.appendChild(wrapper);
+
+        window.applySplitBackground(td, targets.map(target => nameMatchStatus(guessedEnemy, target)));
+        return td;
+    }
+
+    function createSplitTypeCell(guessedType, targetTypes, extraClass = "") {
+        const td = document.createElement("td");
+        if (extraClass) td.classList.add(extraClass);
+        td.innerText = guessedType;
+
+        window.applySplitBackground(td, targetTypes.map(type => guessedType === type ? "correct" : "incorrect"));
+        return td;
+    }
+
+    function numericArrowAndStatus(guessedValue, targetValue, threshold) {
+        if (guessedValue === targetValue) return { arrow: "", status: "correct" };
+        const arrow = guessedValue < targetValue ? "↑" : "↓";
+        const status = Math.abs(guessedValue - targetValue) <= threshold ? "partial" : "incorrect";
+        return { arrow, status };
+    }
+
+    function createSplitNumericCell(guessedValue, targetValues, threshold, extraClass = "") {
+        const td = document.createElement("td");
+        if (extraClass) td.classList.add(extraClass);
+        td.dataset.value = guessedValue;
+
+        const results = targetValues.map(targetValue => numericArrowAndStatus(guessedValue, targetValue, threshold));
+        results.forEach((result, i) => { td.dataset[`arrow${i}`] = result.arrow; });
+
+        window.applySplitBackground(td, results.map(result => result.status));
+        window.redrawCategoryCell(td);
+        return td;
+    }
+
+    function encounterArrowAndStatus(guessedIndex, targetIndex, threshold) {
+        if (guessedIndex === targetIndex) return { arrow: "", status: "correct" };
+        const arrow = guessedIndex < targetIndex ? "→" : "←";
+        const difference = Math.abs(guessedIndex - targetIndex);
+        const status = (guessedIndex !== -1 && targetIndex !== -1 && difference <= threshold) ? "partial" : "incorrect";
+        return { arrow, status };
+    }
+
+    function createSplitEncounterCell(guessedEncounter, targetEncounters, threshold, extraClass = "") {
+        const td = document.createElement("td");
+        if (extraClass) td.classList.add(extraClass);
+        td.dataset.value = guessedEncounter;
+
+        const lowerCaseOrder = encounterOrder.map(item => item.toLowerCase());
+        const guessedIndex = lowerCaseOrder.indexOf(guessedEncounter.toLowerCase());
+
+        const results = targetEncounters.map(targetEncounter => {
+            const targetIndex = lowerCaseOrder.indexOf(targetEncounter.toLowerCase());
+            return encounterArrowAndStatus(guessedIndex, targetIndex, threshold);
+        });
+        results.forEach((result, i) => { td.dataset[`arrow${i}`] = result.arrow; });
+
+        window.applySplitBackground(td, results.map(result => result.status));
+        window.redrawCategoryCell(td);
+        return td;
+    }
+
+    const secretEnemy3ForRow = typeof window.getThirdSecretEnemy === "function" ? window.getThirdSecretEnemy() : null;
+    const doubleTroubleActive = typeof Modifiers !== "undefined" &&
+        Modifiers.active.has("doubleTrouble") &&
+        secretEnemy2;
+    const doubleTroubleTargets = doubleTroubleActive
+        ? [secretEnemy, secretEnemy2, ...(secretEnemy3ForRow ? [secretEnemy3ForRow] : [])]
+        : null;
+
+    if (doubleTroubleActive) {
+        row.appendChild(createSplitNameCell(guessedEnemy, doubleTroubleTargets));
+        row.appendChild(createSplitTypeCell(guessedEnemy.type, doubleTroubleTargets.map(t => t.type), "cell-type"));
+        row.appendChild(createSplitNumericCell(guessedEnemy.health, doubleTroubleTargets.map(t => t.health), 50, "cell-health"));
+        row.appendChild(createSplitNumericCell(guessedEnemy.waves, doubleTroubleTargets.map(t => t.waves), 6, "cell-waves"));
+        row.appendChild(createSplitEncounterCell(guessedEnemy.encounter, doubleTroubleTargets.map(t => t.encounter), 2, "cell-encounter"));
+    } else {
+        row.appendChild(createNameCell(guessedEnemy, secretEnemy));
+        row.appendChild(createCell(guessedEnemy.type, secretEnemy.type, guessedEnemy.type, "cell-type"));
+        row.appendChild(createNumericCell(guessedEnemy.health, secretEnemy.health, 50, "cell-health"));
+        row.appendChild(createNumericCell(guessedEnemy.waves, secretEnemy.waves, 6, "cell-waves"));
+        row.appendChild(createEncounterCell(guessedEnemy.encounter, secretEnemy.encounter, 2, "cell-encounter"));
+    }
 
     if (typeof Modifiers !== "undefined") {
         Modifiers.onGuess(row, guessedEnemy, secretEnemy);
     }
+
 
     if (tbody) tbody.insertBefore(row, tbody.firstChild);
 
@@ -699,6 +961,75 @@ function submitGuess() {
 
     inputElement.value = "";
     if (dropdownMenu) dropdownMenu.style.display = "none";
+
+    if (doubleTroubleActive) {
+        if (!Array.isArray(Modifiers.doubleTroubleFound) || Modifiers.doubleTroubleFound.length !== doubleTroubleTargets.length) {
+            Modifiers.doubleTroubleFound = new Array(doubleTroubleTargets.length).fill(false);
+        }
+        doubleTroubleTargets.forEach((target, i) => {
+            if (guessedEnemy.name === target.name) Modifiers.doubleTroubleFound[i] = true;
+        });
+
+        const targetNames = doubleTroubleTargets.map(t => t.name);
+        const namesList = targetNames.length === 2
+            ? `${targetNames[0]} and ${targetNames[1]}`
+            : `${targetNames.slice(0, -1).join(", ")}, and ${targetNames[targetNames.length - 1]}`;
+
+        if (Modifiers.doubleTroubleFound.every(Boolean)) {
+            if (messageElement) {
+                const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+                messageElement.innerText = `SUCCESS! All targets found: ${namesList}! Wave ${currentWave} Complete!`;
+                if (assassin) {
+                    messageElement.innerText += ` The assassin was ${assassin.name}.`;
+                }
+                messageElement.style.color = "#00ffcc";
+            }
+            isWaveClear = true;
+            inputElement.disabled = true;
+            if (submitButton) submitButton.disabled = true;
+
+            if (continueButton) {
+                continueButton.innerText = "Continue";
+                continueButton.onclick = advanceNextWave;
+                continueButton.style.display = "inline-block";
+            }
+            return;
+        }
+
+        if (guessCount >= MAX_GUESSES && !gameOver) {
+            if (tryUseExtraLife("Out of guesses.")) return;
+
+            if (messageElement) {
+                const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+                const foundNames = targetNames.filter((name, i) => Modifiers.doubleTroubleFound[i]);
+                const foundNote = foundNames.length > 0
+                    ? `You found ${foundNames.join(", ")} but not the rest.`
+                    : `None of the targets were found.`;
+                messageElement.innerText = `Out of guesses. The targets were: ${namesList}. ${foundNote} You reached Wave ${currentWave} before failing.`;
+                if (assassin) {
+                    messageElement.innerText += ` The assassin was ${assassin.name}.`;
+                }
+                messageElement.style.color = "#ff3333";
+            }
+            gameOver = true;
+            inputElement.disabled = true;
+            if (submitButton) submitButton.disabled = true;
+
+            if (continueButton) {
+                continueButton.innerText = "Restart from Wave 1";
+                continueButton.style.display = "inline-block";
+                continueButton.onclick = resetToWaveOne;
+            }
+            return;
+        }
+
+        const foundSoFar = targetNames.filter((name, i) => Modifiers.doubleTroubleFound[i]);
+        if (messageElement && foundSoFar.length > 0) {
+            messageElement.innerText = `${foundSoFar.join(", ")} confirmed! Keep guessing for the rest.`;
+            messageElement.style.color = "#e6b800";
+        }
+        return;
+    }
 
     if (guessedEnemy.name === secretEnemy.name) {
         if (messageElement) {

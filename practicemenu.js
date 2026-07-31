@@ -14,7 +14,8 @@ const PRACTICE_MODIFIERS = [
     { key: "extraLife", name: "Resuscitator" },
     { key: "aimAssist", name: "Aim Assist" },
     { key: "colorblind", name: "Colorblind" },
-    { key: "chubbyTroops", name: "Chubby Troops" }
+    { key: "chubbyTroops", name: "Chubby Troops" },
+    { key: "doubleTrouble", name: "Double Trouble" }
 ];
 
 const PRACTICE_ENEMIES = [

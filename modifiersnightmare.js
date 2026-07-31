@@ -33,8 +33,20 @@ const nightmareDefinitions = {
 
             if (engine && engine.cloakedTargetCategory) {
                 const targetCell = row.querySelector(`.${engine.cloakedTargetCategory}`);
-                if (targetCell && !targetCell.classList.contains("cell-correct")) {
-                    targetCell.innerText = targetCell.innerText.replace(/ [\u2191\u2193\u2192\u2190]$/, "");
+                if (targetCell && typeof window.blankCellArrow === "function") {
+                    if (targetCell.classList.contains("split-cell")) {
+                        const count = parseInt(targetCell.dataset.targetCount || "0", 10);
+                        const sides = [];
+                        for (let i = 0; i < count; i++) {
+                            if (targetCell.dataset[`arrow${i}`]) sides.push(i);
+                        }
+                        if (sides.length > 0) {
+                            const side = sides[Math.floor(Math.random() * sides.length)];
+                            window.blankCellArrow(targetCell, side);
+                        }
+                    } else {
+                        window.blankCellArrow(targetCell, null);
+                    }
                 }
             }
         },
@@ -99,30 +111,17 @@ const nightmareDefinitions = {
     },
     sabotage: {
         name: "Sabotage",
-        description: "One non-correct arrow (Health, Total Waves, or First Encounter) is always flipped to point the wrong way. Vitaraged: 2 independent picks are flipped - hitting the same category twice cancels it back to normal.",
+        description: "One non-correct category (Health, Total Waves, or First Encounter) always has an arrow flipped to point the wrong way. With Double Trouble, a category and target side are picked instead. Vitaraged: 2 independent picks are flipped - hitting the same one twice cancels it back to normal.",
         onGuess: (row, guessedEnemy, secretEnemy, engine, key) => {
-            const flipPairs = [["↑", "↓"], ["↓", "↑"], ["→", "←"], ["←", "→"]];
-
-            const fieldChecks = [
-                { cls: "cell-health", isCorrect: guessedEnemy.health === secretEnemy.health },
-                { cls: "cell-waves", isCorrect: guessedEnemy.waves === secretEnemy.waves },
-                { cls: "cell-encounter", isCorrect: guessedEnemy.encounter.toLowerCase() === secretEnemy.encounter.toLowerCase() }
-            ];
-
-            const candidates = fieldChecks
-                .filter(field => !field.isCorrect)
-                .map(field => row.querySelector(`.${field.cls}`))
-                .filter(Boolean);
+            const slots = typeof window.getEligibleCategorySlots === "function"
+                ? window.getEligibleCategorySlots(row, guessedEnemy, secretEnemy)
+                : [];
 
             const flipOnce = () => {
-                if (candidates.length === 0) return;
-
-                const target = candidates[Math.floor(Math.random() * candidates.length)];
-                for (const [from, to] of flipPairs) {
-                    if (target.innerText.includes(from)) {
-                        target.innerText = target.innerText.replace(from, to);
-                        break;
-                    }
+                if (slots.length === 0) return;
+                const slot = slots[Math.floor(Math.random() * slots.length)];
+                if (typeof window.flipCellArrow === "function") {
+                    window.flipCellArrow(slot.cell, slot.side);
                 }
             };
 
@@ -149,44 +148,38 @@ const nightmareDefinitions = {
     },
     miscommunication: {
         name: "Miscommunication",
-        description: "A non-correct stat (Health, Total Waves, or First Encounter) may display the wrong value. Vitaraged: its color is also displayed wrong, independent of the real value.",
+        description: "A non-correct category (Health, Total Waves, or First Encounter) may display the wrong value. With Double Trouble, a category and target side are picked instead. Vitaraged: its color is also displayed wrong, independent of the real value.",
         onGuess: (row, guessedEnemy, secretEnemy, engine, key) => {
-            const fieldChecks = [
-                { cls: "cell-health", isCorrect: guessedEnemy.health === secretEnemy.health },
-                { cls: "cell-waves", isCorrect: guessedEnemy.waves === secretEnemy.waves },
-                { cls: "cell-encounter", isCorrect: guessedEnemy.encounter.toLowerCase() === secretEnemy.encounter.toLowerCase() }
-            ];
+            const slots = typeof window.getEligibleCategorySlots === "function"
+                ? window.getEligibleCategorySlots(row, guessedEnemy, secretEnemy)
+                : [];
 
-            const candidates = fieldChecks
-                .filter(field => !field.isCorrect)
-                .map(field => row.querySelector(`.${field.cls}`))
-                .filter(Boolean);
+            if (slots.length === 0) return;
 
-            if (candidates.length === 0) return;
-
-            const target = candidates[Math.floor(Math.random() * candidates.length)];
+            const slot = slots[Math.floor(Math.random() * slots.length)];
             const sign = Math.random() < 0.5 ? 1 : -1;
-            const arrowMatch = target.innerText.match(/ [↑↓→←]$/);
-            const arrowSuffix = arrowMatch ? arrowMatch[0] : "";
 
-            if (target.classList.contains("cell-health")) {
-                target.innerText = `${guessedEnemy.health + sign * 50}${arrowSuffix}`;
-            } else if (target.classList.contains("cell-waves")) {
-                target.innerText = `${guessedEnemy.waves + sign * 2}${arrowSuffix}`;
-            } else if (target.classList.contains("cell-encounter")) {
+            if (slot.cls === "cell-health") {
+                slot.cell.dataset.value = guessedEnemy.health + sign * 50;
+            } else if (slot.cls === "cell-waves") {
+                slot.cell.dataset.value = guessedEnemy.waves + sign * 2;
+            } else if (slot.cls === "cell-encounter") {
                 const order = window.encounterOrder || [];
                 const lowerOrder = order.map(item => item.toLowerCase());
                 const idx = lowerOrder.indexOf(guessedEnemy.encounter.toLowerCase());
                 if (idx !== -1) {
                     const newIdx = Math.min(Math.max(idx + sign, 0), order.length - 1);
-                    target.innerText = `${order[newIdx]}${arrowSuffix}`;
+                    slot.cell.dataset.value = order[newIdx];
                 }
             }
+            if (typeof window.redrawCategoryCell === "function") {
+                window.redrawCategoryCell(slot.cell);
+            }
 
-            if (engine && engine.isBuffed(key)) {
-                target.classList.remove("cell-correct", "cell-incorrect", "cell-partial");
-                const fakeColors = ["cell-correct", "cell-incorrect", "cell-partial"];
-                target.classList.add(fakeColors[Math.floor(Math.random() * fakeColors.length)]);
+            if (engine && engine.isBuffed(key) && typeof window.setCellFakeStatus === "function") {
+                const fakeStatuses = ["correct", "incorrect", "partial"];
+                const fakeStatus = fakeStatuses[Math.floor(Math.random() * fakeStatuses.length)];
+                window.setCellFakeStatus(slot.cell, fakeStatus, slot.side);
             }
         }
     },
@@ -274,9 +267,18 @@ const nightmareDefinitions = {
             checks.forEach(({ cls, close }) => {
                 if (!close) return;
                 const cell = row.querySelector(`.${cls}`);
-                if (!cell || cell.classList.contains("cell-correct")) return;
+                if (!cell) return;
+                const isFullyExact = cell.classList.contains("split-cell")
+                    ? !Array.from({ length: parseInt(cell.dataset.targetCount || "0", 10) }, (_, i) => cell.dataset[`arrow${i}`]).some(Boolean)
+                    : cell.classList.contains("cell-correct");
+                if (isFullyExact) return;
                 cell.classList.add("cell-assassin-warning");
-                cell.innerText = `${cell.innerText} ⚠`;
+                cell.dataset.warning = "true";
+                if (typeof window.redrawCategoryCell === "function") {
+                    window.redrawCategoryCell(cell);
+                } else {
+                    cell.innerText = `${cell.innerText} ⚠`;
+                }
             });
 
             if (guessedEnemy.name === currentAssassin.name) {
@@ -417,6 +419,13 @@ const nightmareDefinitions = {
             const guessedKey = guessedEnemy.name.toLowerCase();
             if (!engine.chubbyEnemies.has(guessedKey)) return;
 
+            const secondTarget = typeof window.getSecondSecretEnemy === "function" ? window.getSecondSecretEnemy() : null;
+            const thirdTarget = typeof window.getThirdSecretEnemy === "function" ? window.getThirdSecretEnemy() : null;
+            const isCorrectGuess = (secretEnemy && guessedEnemy.name === secretEnemy.name) ||
+                (secondTarget && guessedEnemy.name === secondTarget.name) ||
+                (thirdTarget && guessedEnemy.name === thirdTarget.name);
+            if (isCorrectGuess) return;
+
             const buffed = engine.isBuffed(key);
             const totalCost = buffed ? 3 : 2;
             const extraGuesses = totalCost - 1;
@@ -446,6 +455,37 @@ const nightmareDefinitions = {
         },
         onReset: (engine) => {
             if (engine) engine.chubbyEnemies = null;
+        }
+    },
+    doubleTrouble: {
+        name: (buffed) => buffed ? "Triple Trouble" : "Double Trouble",
+        description: "There are 2 secret targets this wave instead of 1. Every stat category shows one arrow per target, and the cell's color is split to match, one section per target. Guesses increased from 6 to 7 to compensate. You must correctly guess every target before you run out of guesses. Vitaraged: 3 secret targets instead, guesses increased to 9 instead of 7.",
+        onStart: (engine, key) => {
+            engine.doubleTroubleFound = null;
+            const buffed = engine && engine.isBuffed(key);
+            if (typeof window.setMaxGuesses === "function") {
+                window.setMaxGuesses(buffed ? 9 : 7);
+            }
+            if (typeof window.pickSecondTarget === "function") {
+                window.pickSecondTarget();
+            }
+            if (buffed && typeof window.pickThirdTarget === "function") {
+                window.pickThirdTarget();
+            }
+        },
+        onReset: (engine) => {
+            if (engine) {
+                engine.doubleTroubleFound = null;
+            }
+            if (typeof window.setMaxGuesses === "function") {
+                window.setMaxGuesses(6);
+            }
+            if (typeof window.clearSecondTarget === "function") {
+                window.clearSecondTarget();
+            }
+            if (typeof window.clearThirdTarget === "function") {
+                window.clearThirdTarget();
+            }
         }
     }
 };
