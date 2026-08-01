@@ -1,19 +1,16 @@
 const itemDatabase = {
-    "pistol": { name: "Pistol", type: "Sidearm", damage: 25, firerate: 5, hasSpecialAbility: false },
-    "revolver": { name: "Revolver", type: "Sidearm", damage: 55, firerate: 2, hasSpecialAbility: false },
-    "smg": { name: "SMG", type: "Automatic", damage: 18, firerate: 10, hasSpecialAbility: false },
-    "assault rifle": { name: "Assault Rifle", type: "Automatic", damage: 30, firerate: 7, hasSpecialAbility: false },
-    "shotgun": { name: "Shotgun", type: "Shotgun", damage: 90, firerate: 1, hasSpecialAbility: false },
-    "auto shotgun": { name: "Auto Shotgun", type: "Shotgun", damage: 70, firerate: 3, hasSpecialAbility: true },
-    "sniper rifle": { name: "Sniper Rifle", type: "Precision", damage: 150, firerate: 1, hasSpecialAbility: true },
-    "crossbow": { name: "Crossbow", type: "Precision", damage: 120, firerate: 1, hasSpecialAbility: false },
-    "rpg": { name: "RPG", type: "Launcher", damage: 300, firerate: 1, hasSpecialAbility: true },
-    "grenade launcher": { name: "Grenade Launcher", type: "Launcher", damage: 200, firerate: 2, hasSpecialAbility: true },
-    "flamethrower": { name: "Flamethrower", type: "Special", damage: 15, firerate: 15, hasSpecialAbility: true },
-    "railgun": { name: "Railgun", type: "Special", damage: 250, firerate: 1, hasSpecialAbility: true },
-    "minigun": { name: "Minigun", type: "Heavy", damage: 20, firerate: 20, hasSpecialAbility: false },
-    "nailgun": { name: "Nailgun", type: "Automatic", damage: 12, firerate: 12, hasSpecialAbility: false },
-    "knife": { name: "Knife", type: "Melee", damage: 65, firerate: 3, hasSpecialAbility: false }
+    "rifle": { name: "Rifle", type: "Weapon", damage: 20, firerate: 500, hasSpecialAbility: false },
+    "harpoon gun": { name: "Harpoon Gun", type: "Weapon", damage: 25, firerate: 550, hasSpecialAbility: true },
+    "bolter": { name: "Bolter", type: "Weapon", damage: 20, firerate: 550, hasSpecialAbility: true },
+    "shotgun": { name: "Shotgun", type: "Weapon", damage: 15, firerate: 65, hasSpecialAbility: false },
+    "sprinters streak": { name: "Sprinters Streak", type: "Weapon", damage: 10, firerate: 100, hasSpecialAbility: true },
+    "hallsweeper": { name: "Hallsweeper", type: "Weapon", damage: 7.5, firerate: 100, hasSpecialAbility: true },
+    "dmr": { name: "DMR", type: "Weapon", damage: 55, firerate: 95, hasSpecialAbility: false },
+    "gift of fire": { name: "Gift Of Fire", type: "Weapon", damage: 55, firerate: 70, hasSpecialAbility: true },
+    "armor peeler": { name: "Armor Peeler", type: "Weapon", damage: 55, firerate: 120, hasSpecialAbility: true },
+    "akimbo": { name: "Akimbo", type: "Weapon", damage: 26, firerate: 400, hasSpecialAbility: false },
+    "voltaic impact": { name: "Voltaic Impact", type: "Weapon", damage: 27, firerate: 585, hasSpecialAbility: true},
+    "gunslinger": { name: "Gunslinger", type: "Weapon", damage: 20, firerate: 250, hasSpecialAbility: true },
 };
 
 const itemKeys = Object.keys(itemDatabase);
