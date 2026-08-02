@@ -21,7 +21,7 @@ const itemDatabase = {
     "rpg": { name: "RPG", type: "Weapon", damage: 1200, firerate: 20, hasSpecialAbility: false },
     "rocket stormer": { name: "Rocket Stormer", type: "Weapon", damage: 980, firerate: 150, hasSpecialAbility: true },
     "shockwave device": { name: "Shockwave Device", type: "Weapon", damage: 2250, firerate: 60, hasSpecialAbility: false },
-    "grenade launcher": { name: "Grenade Launcher", type: "Weapon", damage: 200, firerate: 17, hasSpecialAbility: false },
+    "grenade launcher": { name: "Grenade Launcher", type: "Weapon", damage: 200, firerate: 20, hasSpecialAbility: false },
     "intraplanar device": { name: "Intraplanar Device", type: "Weapon", damage: 80, firerate: 400, hasSpecialAbility: false },
     "parabolic hydra": { name: "Parabolic Hydra", type: "Weapon", damage: 100, firerate: 60, hasSpecialAbility: true },
     "medical bow": { name: "Medical Bow", type: "Weapon", damage: 80, firerate: 60, hasSpecialAbility: false },
