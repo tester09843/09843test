@@ -10,7 +10,7 @@ const itemDatabase = {
     "armor peeler": { name: "Armor Peeler", type: "Weapon", damage: 200, firerate: 120, hasSpecialAbility: false },
     "akimbo": { name: "Akimbo", type: "Weapon", damage: 26, firerate: 400, hasSpecialAbility: false },
     "voltaic impact": { name: "Voltaic Impact", type: "Weapon", damage: 27, firerate: 585, hasSpecialAbility: false },
-    "gunslinger": { name: "Gunslinger", type: "Weapon", damage: 20, firerate: 300, hasSpecialAbility: false },
+    "gunslingers": { name: "Gunslingers", type: "Weapon", damage: 20, firerate: 300, hasSpecialAbility: false },
     "smg": { name: "SMG", type: "Weapon", damage: 22, firerate: 700, hasSpecialAbility: false },
     "twinface (light)": { name: "Twinface (Light)", type: "Weapon", damage: 22, firerate: 900, hasSpecialAbility: true },
     "twinface (heavy)": { name: "Twinface (Heavy)", type: "Weapon", damage: 28, firerate: 350, hasSpecialAbility: true },
@@ -39,7 +39,7 @@ const itemDatabase = {
     "jetpack": { name: "Jetpack", type: "Utility", damage: 0, firerate: 5.5, hasSpecialAbility: false },
     "terminal velocity": { name: "Terminal Velocity", type: "Utility", damage: 85, firerate: 2.25, hasSpecialAbility: true },
     "aerorig": { name: "Aerorig", type: "Utility", damage: 150, firerate: 10, hasSpecialAbility: false },
-    "barrier kit": { name: "Barrier Kit", type: "Utility", damage: 1000, firerate: 90, hasSpecialAbility: false },
+    "barrier": { name: "Barrier", type: "Utility", damage: 1000, firerate: 90, hasSpecialAbility: false },
     "brace": { name: "BRACE", type: "Utility", damage: 500, firerate: 90, hasSpecialAbility: false },
     "hallucinator kit": { name: "Hallucinator Kit", type: "Utility", damage: 400, firerate: 1, hasSpecialAbility: false },
     "aidkit": { name: "Aidkit", type: "Utility", damage: 0, firerate: 65, hasSpecialAbility: false },
@@ -147,7 +147,7 @@ function initializeGameSession() {
     if (tbody) tbody.innerHTML = "";
 
     if (typeof Modifiers !== "undefined") {
-        Modifiers.evaluateWave(currentWave, "item");
+        Modifiers.evaluateWave(currentWave);
     }
 }
 
