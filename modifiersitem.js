@@ -97,34 +97,29 @@ const itemDefinitions = {
     },
     sabotage: {
         name: "Sabotage",
-        description: "One non-correct arrow (Damage/Health or Firerate/Cooldown) is always flipped to point the wrong way, or the Special Ability answer is flipped if it's picked instead. Vitaraged: 2 independent picks are flipped - hitting the same category twice cancels it back to normal.",
+        description: "One non-correct arrow (Damage/Health or Firerate/Cooldown) is always flipped to point the wrong way. Vitaraged: 2 independent picks are flipped - hitting the same category twice cancels it back to normal.",
         onGuess: (row, guessedItem, secretItem, engine, key) => {
             const flipPairs = [["↑", "↓"], ["↓", "↑"]];
 
             const fieldChecks = [
-                { cls: "cell-damage", isCorrect: guessedItem.damage === secretItem.damage, numeric: true },
-                { cls: "cell-firerate", isCorrect: guessedItem.firerate === secretItem.firerate, numeric: true },
-                { cls: "cell-special", isCorrect: guessedItem.hasSpecialAbility === secretItem.hasSpecialAbility, numeric: false }
+                { cls: "cell-damage", isCorrect: guessedItem.damage === secretItem.damage },
+                { cls: "cell-firerate", isCorrect: guessedItem.firerate === secretItem.firerate }
             ];
 
             const candidates = fieldChecks
                 .filter(field => !field.isCorrect)
-                .map(field => ({ cell: row.querySelector(`.${field.cls}`), numeric: field.numeric }))
-                .filter(f => f.cell);
+                .map(field => row.querySelector(`.${field.cls}`))
+                .filter(Boolean);
 
             const flipOnce = () => {
                 if (candidates.length === 0) return;
 
                 const target = candidates[Math.floor(Math.random() * candidates.length)];
-                if (target.numeric) {
-                    for (const [from, to] of flipPairs) {
-                        if (target.cell.innerText.includes(from)) {
-                            target.cell.innerText = target.cell.innerText.replace(from, to);
-                            break;
-                        }
+                for (const [from, to] of flipPairs) {
+                    if (target.innerText.includes(from)) {
+                        target.innerText = target.innerText.replace(from, to);
+                        break;
                     }
-                } else {
-                    target.cell.innerText = target.cell.innerText === "Yes" ? "No" : "Yes";
                 }
             };
 
@@ -151,14 +146,13 @@ const itemDefinitions = {
     },
     miscommunication: {
         name: "Miscommunication",
-        description: "A non-correct stat (Damage/Health, Firerate/Cooldown, or Special Ability) may display the wrong value. Vitaraged: its color is also displayed wrong, independent of the real value.",
+        description: "A non-correct stat (Damage/Health or Firerate/Cooldown) may display the wrong value. Vitaraged: its color is also displayed wrong, independent of the real value.",
         onGuess: (row, guessedItem, secretItem, engine, key) => {
             // Correctness is checked against the real data, not the cell's current
             // DOM classes, so a genuinely correct stat can never be touched here.
             const fieldChecks = [
                 { cls: "cell-damage", isCorrect: guessedItem.damage === secretItem.damage },
-                { cls: "cell-firerate", isCorrect: guessedItem.firerate === secretItem.firerate },
-                { cls: "cell-special", isCorrect: guessedItem.hasSpecialAbility === secretItem.hasSpecialAbility }
+                { cls: "cell-firerate", isCorrect: guessedItem.firerate === secretItem.firerate }
             ];
 
             const candidates = fieldChecks
@@ -177,8 +171,6 @@ const itemDefinitions = {
                 target.innerText = `${Math.max(0, guessedItem.damage + sign * 10)}${arrowSuffix}`;
             } else if (target.classList.contains("cell-firerate")) {
                 target.innerText = `${Math.max(0, guessedItem.firerate + sign * 25)}${arrowSuffix}`;
-            } else if (target.classList.contains("cell-special")) {
-                target.innerText = guessedItem.hasSpecialAbility ? "No" : "Yes";
             }
 
             if (engine && engine.isBuffed(key)) {
