@@ -1,5 +1,6 @@
 const enemyDatabase = {
     "infantry": { name: "Infantry", type: "Fodder", health: 100, waves: 34, xpOnKill: 50, encounter: "Wave 1 siege" },
+    "grenade": { name: "Grenade", type: "Fodder", health: 0, waves: 34, xpOnKill: 0, encounter: "Wave 1 siege" },
     "cloaker": { name: "Cloaker", type: "Fodder", health: 100, waves: 29, xpOnKill: 150, encounter: "Wave 1 siege" },
     "shielder": { name: "Shielder", type: "Fodder", health: 110, waves: 30, xpOnKill: 100, encounter: "Wave 2 siege" },
     "saboteur": { name: "Saboteur", type: "Fodder", health: 100, waves: 32, xpOnKill: 50, encounter: "Wave 2 siege" },
@@ -7,7 +8,7 @@ const enemyDatabase = {
     "landmine": { name: "Landmine", type: "Fodder", health: 20, waves: 32, xpOnKill: 0, encounter: "Wave 2 siege" },
     "administrator": { name: "Administrator", type: "Fodder", health: 100, waves: 1, xpOnKill: 100, encounter: "Wave 2 epilogue" },
     "grenadier": { name: "Grenadier", type: "Advanced", health: 180, waves: 16, xpOnKill: 100, encounter: "Wave 4 siege" },
-    "jetpacker": { name: "Jetpacker", type: "Advanced", health: 100, waves: 14, xpOnKill: 100, encounter: "Wave 5 siege" },
+    "jetpacker": { name: "Jetpacker", type: "Advanced", health: 100, waves: 14, xpOnKill: 40, encounter: "Wave 5 siege" },
     "gunner": { name: "Gunner", type: "Advanced", health: 350, waves: 22, xpOnKill: 150, encounter: "Wave 5 siege" },
     "sniper": { name: "Sniper", type: "Advanced", health: 100, waves: 23, xpOnKill: 80, encounter: "Wave 5 siege" },
     "tranquilizer": { name: "Tranquilizer", type: "Advanced", health: 100, waves: 8, xpOnKill: 50, encounter: "Wave 2 epilogue" },
@@ -53,7 +54,7 @@ const enemyDatabase = {
     "escort shielder": { name: "Escort Shielder", type: "Elite Fodder", health: 250, waves: 12, xpOnKill: 150, encounter: "Wave 6 siege" },
     "shield": { name: "Shield", type: "Elite Fodder", health: 250, waves: 12, xpOnKill: 50, encounter: "Wave 6 siege" },
     "escort gunner": { name: "Escort Gunner", type: "Elite Advanced", health: 500, waves: 12, xpOnKill: 200, encounter: "Wave 6 siege" },
-    "prometheus": { name: "Prometheus", type: "Boss", health: 750, waves: 12, xpOnKill: 500, encounter: "Wave 6 siege" },
+    "prometheus": { name: "Prometheus", type: "Boss", health: 750, waves: 12, xpOnKill: 100, encounter: "Wave 6 siege" },
     "fuel tank (prometheus)": { name: "Fuel Tank (Prometheus)", type: "Boss", health: 200, waves: 12, xpOnKill: 500, encounter: "Wave 6 siege" },
     "hermes": { name: "Hermes", type: "Boss", health: 525, waves: 12, xpOnKill: 350, encounter: "Wave 6 siege" },
     "hermes pods": { name: "Hermes Pods", type: "Boss", health: 60, waves: 12, xpOnKill: 100, encounter: "Wave 6 siege" },
@@ -66,7 +67,7 @@ const enemyDatabase = {
     "dreadnought armor": { name: "Dreadnought Armor", type: "Boss", health: 2000, waves: 4, encounter: "Wave 10 siege" },
     "chassis": { name: "Chassis", type: "Boss", health: 1300, waves: 1, xpOnKill: 50, encounter: "Wave 10 mastermind" },
     "mastermind": { name: "Mastermind", type: "Boss", health: 125, waves: 1, xpOnKill: 50, encounter: "Wave 10 mastermind" },
-    "ares": { name: "Ares", type: "Boss", health: 1000, waves: 2, xpOnKill: 1750, encounter: "Wave 3 epilogue" },
+    "ares": { name: "Ares", type: "Boss", health: 1000, waves: 2, xpOnKill: 0, encounter: "Wave 3 epilogue" },
     "london prime": { name: "London Prime", type: "Boss", health: 3000, waves: 0, xpOnKill: 100, encounter: "Sandbox" },
     "manglenether345": { name: "MangleNether345", type: "Boss", health: 250, waves: 0, xpOnKill: 0, encounter: "Sandbox" },
     "a-10": { name: "A-10", type: "Boss", health: 800, waves: 0, xpOnKill: 0, encounter: "Sandbox" },
@@ -80,7 +81,6 @@ const enemyDatabase = {
     "old apu": { name: "Old APU", type: "Mech", health: 2000, waves: 0, xpOnKill: 300, encounter: "Sandbox" },
     "operator": { name: "Operator", type: "Advanced", health: 200, waves: 0, xpOnKill: 0, encounter: "Sandbox" },
     "apc": { name: "APC", type: "Mech", health: 2500, waves: 0, xpOnKill: 0, encounter: "Sandbox" },
-    "grenade": { name: "Grenade", type: "Fodder", health: 0, waves: 34, xpOnKill: 0, encounter: "Wave 1 siege" },
     "level 1 sentry": { name: "Level 1 Sentry", type: "Mech", health: 300, waves: 14, xpOnKill: 100, encounter: "Wave 4 siege" },
     "level 2 sentry": { name: "Level 2 Sentry", type: "Mech", health: 450, waves: 14, xpOnKill: 100, encounter: "Wave 4 siege" },
     "level 3 sentry": { name: "Level 3 Sentry", type: "Mech", health: 600, waves: 14, xpOnKill: 100, encounter: "Wave 4 siege" },
@@ -178,23 +178,7 @@ window.getSecretEnemy = function() {
     return secretEnemy;
 };
 
-function loadEnemyRoster() {
-    try {
-        const stored = localStorage.getItem("practiceEnemyRoster");
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed)) {
-                const filtered = parsed.filter(key => enemyDatabase[key]);
-                if (filtered.length > 0) return filtered;
-            }
-        }
-    } catch (e) {
-        // fall through to the full roster
-    }
-    return Object.keys(enemyDatabase);
-}
-
-let enemyKeys = loadEnemyRoster();
+const enemyKeys = Object.keys(enemyDatabase);
 window.enemyKeys = enemyKeys;
 let secretEnemy;
 let secretEnemy2 = null;
@@ -366,8 +350,7 @@ function initializeGameSession() {
     if (tbody) tbody.innerHTML = "";
 
     if (typeof Modifiers !== "undefined") {
-        Modifiers.currentWave = currentWave;
-        window.applyPracticeModifiers();
+        Modifiers.evaluateWave(currentWave);
     }
 }
 
@@ -640,34 +623,6 @@ window.addExtraGuessCount = function(n) {
     guessCount += n;
 };
 
-window.applyPracticeModifiers = function() {
-    let config = { enabled: [], vitaraged: [], randomize: false };
-    try {
-        const stored = localStorage.getItem("practiceModifierConfig");
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed.enabled)) config.enabled = parsed.enabled;
-            if (Array.isArray(parsed.vitaraged)) config.vitaraged = parsed.vitaraged;
-            if (typeof parsed.randomize === "boolean") config.randomize = parsed.randomize;
-        }
-    } catch (e) {
-        config = { enabled: [], vitaraged: [], randomize: false };
-    }
-
-    if (typeof Modifiers === "undefined") return;
-
-    if (config.randomize) {
-        // Only draw from the modifiers the user selected, but let the engine
-        // pick how many appear and which ones, using the same wave-based
-        // formula and vitarage-forcing rule Classic mode uses.
-        Modifiers.allowedKeys = config.enabled;
-        Modifiers.evaluateWave(currentWave);
-    } else {
-        Modifiers.allowedKeys = null;
-        Modifiers.applyFixedModifiers(config.enabled, new Set(config.vitaraged));
-    }
-};
-
 function tryUseExtraLife(reasonText) {
     if (typeof Modifiers === "undefined") return false;
     if (!Modifiers.active.has("extraLife")) return false;
@@ -848,8 +803,20 @@ function submitGuess() {
         wrapper.appendChild(textSpan);
         td.appendChild(wrapper);
 
+        const isDummyName = name => name.toLowerCase().startsWith("dummy ");
+        const isOldName = name => name.toLowerCase().startsWith("old ");
+
+        const pdcGroup = new Set(["pdc kit", "governor kit", "old pdc", "mads kit", "vehicle pdc", "adc", "sprayer kit", "turret kit"]);
+        const isPdcGroupName = name => pdcGroup.has(name.toLowerCase());
+
         if (guessedEnemy.name === targetEnemy.name) {
             td.classList.add("cell-correct");
+        } else if (isDummyName(guessedEnemy.name) && isDummyName(targetEnemy.name)) {
+            td.classList.add("cell-partial");
+        } else if (isOldName(guessedEnemy.name) && isOldName(targetEnemy.name)) {
+            td.classList.add("cell-partial");
+        } else if (isPdcGroupName(guessedEnemy.name) && isPdcGroupName(targetEnemy.name)) {
+            td.classList.add("cell-partial");
         } else {
             td.classList.add("cell-incorrect");
         }
@@ -908,7 +875,16 @@ function submitGuess() {
     }
 
     function nameMatchStatus(guessedEnemy, target) {
-        return guessedEnemy.name === target.name ? "correct" : "incorrect";
+        const isDummyName = name => name.toLowerCase().startsWith("dummy ");
+        const isOldName = name => name.toLowerCase().startsWith("old ");
+        const pdcGroup = new Set(["pdc kit", "governor kit", "old pdc", "mads kit", "vehicle pdc", "adc", "sprayer kit", "turret kit"]);
+        const isPdcGroupName = name => pdcGroup.has(name.toLowerCase());
+
+        if (guessedEnemy.name === target.name) return "correct";
+        if (isDummyName(guessedEnemy.name) && isDummyName(target.name)) return "partial";
+        if (isOldName(guessedEnemy.name) && isOldName(target.name)) return "partial";
+        if (isPdcGroupName(guessedEnemy.name) && isPdcGroupName(target.name)) return "partial";
+        return "incorrect";
     }
 
     function createSplitNameCell(guessedEnemy, targets) {
@@ -1017,6 +993,7 @@ function submitGuess() {
     if (typeof Modifiers !== "undefined") {
         Modifiers.onGuess(row, guessedEnemy, secretEnemy);
     }
+
 
     if (tbody) tbody.insertBefore(row, tbody.firstChild);
 
