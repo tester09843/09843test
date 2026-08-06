@@ -95,23 +95,14 @@
     }
 
 
-    .wordle-table {
-        margin-top: 0.5rem;
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-        width: 100%;
-        -webkit-overflow-scrolling: touch;
-    }
-
     .wordle-table th {
-        font-size: 0.75rem !important;
-        padding: 0.5rem 0.3rem !important;
+        font-size: 0.8rem !important;
+        padding: 0.6rem 0.4rem !important;
     }
 
     .wordle-table td {
-        font-size: 0.75rem !important;
-        padding: 0.5rem 0.3rem !important;
+        font-size: 0.8rem !important;
+        padding: 0.6rem 0.4rem !important;
     }
 
     .table-enemy-icon,
@@ -202,7 +193,6 @@
 }
 
 
-
 @media screen and (max-width: 480px) {
 
 
@@ -231,6 +221,14 @@
         max-width: 100% !important;
     }
 
+
+    .wordle-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
 
     .wordle-table th,
     .wordle-table td {
