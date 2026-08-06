@@ -347,7 +347,10 @@ body.game-body {
 .wordle-table.colorblind-vitaraged td.cell-health,
 .wordle-table.colorblind-vitaraged td.cell-waves,
 .wordle-table.colorblind-vitaraged td.cell-encounter,
-.wordle-table.colorblind-vitaraged td.cell-xp {
+.wordle-table.colorblind-vitaraged td.cell-xp,
+.wordle-table.colorblind-vitaraged td.cell-damage,
+.wordle-table.colorblind-vitaraged td.cell-firerate,
+.wordle-table.colorblind-vitaraged td.cell-special {
     filter: blur(6px);
     transition: filter 0.2s ease;
 }
