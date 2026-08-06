@@ -111,7 +111,7 @@ const sandboxDefinitions = {
     },
     sabotage: {
         name: "Sabotage",
-        description: "One non-correct category (Damage or Firerate) always has an arrow flipped to point the wrong way. With Double Trouble, a category and target side are picked instead. Vitaraged: 2 independent picks are flipped - hitting the same one twice cancels it back to normal.",
+        description: "One non-correct category (Damage/Health or Firerate/Cooldown) always has an arrow flipped to point the wrong way. With Double Trouble, a category and target side are picked instead. Vitaraged: 2 independent picks are flipped - hitting the same one twice cancels it back to normal.",
         onGuess: (row, guessedItem, secretItem, engine, key) => {
             const slots = typeof window.getEligibleCategorySlots === "function"
                 ? window.getEligibleCategorySlots(row, guessedItem, secretItem)
@@ -148,7 +148,7 @@ const sandboxDefinitions = {
     },
     miscommunication: {
         name: "Miscommunication",
-        description: "A non-correct category (Damage or Firerate) may display the wrong value. With Double Trouble, a category and target side are picked instead. Vitaraged: its color is also displayed wrong, independent of the real value.",
+        description: "A non-correct category (Damage/Health or Firerate/Cooldown) may display the wrong value. With Double Trouble, a category and target side are picked instead. Vitaraged: its color is also displayed wrong, independent of the real value.",
         onGuess: (row, guessedItem, secretItem, engine, key) => {
             const slots = typeof window.getEligibleCategorySlots === "function"
                 ? window.getEligibleCategorySlots(row, guessedItem, secretItem)
@@ -330,7 +330,7 @@ const sandboxDefinitions = {
 
             if (typeof window.handleMutilatedDeathsFail === "function") {
                 const buffed = !!(engine && engine.isBuffed(key));
-                window.handleMutilatedDeathsFail(buffed);
+                window.handleMutilatedDeathsFail(buffed, guessedItem.name);
             }
         }
     },
