@@ -10,7 +10,7 @@ window.getCurrentAssassin = function() {
     return currentAssassinItem;
 };
 
-const itemDefinitions = {
+const itemHellDefinitions = {
     cloaked: {
         name: "Cloaked",
         description: "Hides the Type column. Vitaraged: also strips the arrow from one fixed stat category all wave.",
@@ -273,31 +273,32 @@ const itemDefinitions = {
     },
     vitarage: {
         name: "Vitarage",
-        description: "Doesn't affect the game directly — instead buffs 1 or more random active modifiers this wave. Starting wave 25 it can buff up to 2, wave 30 up to 3, and wave 35 up to 4.",
+        description: "Doesn't affect the game directly — instead buffs 1 or more other random active modifiers this wave. Buffs 2 starting wave 9, 3 on wave 10, and every active modifier on Wave Ultima.",
         onStart: (engine) => {
             engine.buffedModifiers = new Set();
+            const wave = engine.currentWave;
             let candidates = [...engine.active].filter(key => key !== "vitarage");
 
-            if (engine.active.has("jammedRadar")) {
+            if (wave !== 11 && engine.active.has("jammedRadar")) {
                 candidates = candidates.filter(key => key !== "weakenedSignal");
             }
 
-            if (candidates.length > 0) {
-                const wave = engine.currentWave || 1;
-                let maxBuffs = 1;
-                if (wave >= 35) maxBuffs = 4;
-                else if (wave >= 30) maxBuffs = 3;
-                else if (wave >= 25) maxBuffs = 2;
-                maxBuffs = Math.min(maxBuffs, candidates.length);
-
-                const buffCount = 1 + Math.floor(Math.random() * maxBuffs);
-
-                const pool = [...candidates];
-                while (engine.buffedModifiers.size < buffCount && pool.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * pool.length);
-                    engine.buffedModifiers.add(pool.splice(randomIndex, 1)[0]);
-                }
+            if (candidates.length === 0) {
+                engine.renderBadges();
+                return;
             }
+
+            let buffCount = 1;
+            if (wave === 9) buffCount = 2;
+            else if (wave === 10) buffCount = 3;
+            else if (wave === 11) buffCount = candidates.length;
+
+            const pool = [...candidates];
+            while (engine.buffedModifiers.size < buffCount && pool.length > 0) {
+                const randomIndex = Math.floor(Math.random() * pool.length);
+                engine.buffedModifiers.add(pool.splice(randomIndex, 1)[0]);
+            }
+
             engine.renderBadges();
         },
         onReset: (engine) => {
@@ -306,18 +307,20 @@ const itemDefinitions = {
     }
 };
 
-function itemWaveCounts(waveNumber) {
-    if (waveNumber <= 5) return 0;
+function getItemHellWaveModifierCount(waveNumber) {
+    if (waveNumber === 11) return Object.keys(itemHellDefinitions).length;
 
-    const cap = Math.min(4, Math.floor(waveNumber / 5));
-    let minCount = 1;
-    if (waveNumber >= 100) minCount = 4;
-    else if (waveNumber >= 60) minCount = 3;
-    else if (waveNumber > 40) minCount = 2;
-    minCount = Math.min(minCount, cap);
+    const schedule = {
+        1: 1, 2: 1,
+        3: 2, 4: 2,
+        5: 3, 6: 3,
+        7: 4, 8: 4,
+        9: 5,
+        10: 6
+    };
 
-    return minCount + Math.floor(Math.random() * (cap - minCount + 1));
+    return schedule[waveNumber] ?? 1;
 }
 
-window.Modifiers = new ModifierEngine("item", itemDefinitions, itemWaveCounts);
-window.Modifiers.forceVitarage = (wave) => wave > 40;
+window.Modifiers = new ModifierEngine("itemhell", itemHellDefinitions, getItemHellWaveModifierCount);
+window.Modifiers.forceVitarage = (waveNumber) => waveNumber >= 7;

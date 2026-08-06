@@ -130,11 +130,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    const categoryButtons = document.querySelectorAll(".category-btn");
+    categoryButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            button.classList.toggle("active");
+            const content = button.nextElementSibling;
+
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        });
+    });
+
     initializeGameSession();
 });
 
 function initializeGameSession() {
-    MAX_GUESSES = 6;
     if (typeof Modifiers !== "undefined") {
         Modifiers.resetAll();
     }
@@ -144,9 +157,20 @@ function initializeGameSession() {
     gameOver = false;
     isWaveClear = false;
     guessCount = 0;
+    MAX_GUESSES = 6;
     guessedItemsList = [];
 
-    if (waveIndicator) waveIndicator.innerText = `Wave: ${currentWave}`;
+    if (waveIndicator) {
+        waveIndicator.classList.remove("wave-hell", "wave-ultima");
+
+        if (currentWave === 11) {
+            waveIndicator.innerText = "Wave: Ultima";
+            waveIndicator.classList.add("wave-ultima");
+        } else {
+            waveIndicator.innerText = `Wave: ${currentWave}`;
+            waveIndicator.classList.add("wave-hell");
+        }
+    }
 
     if (continueButton) {
         continueButton.innerText = "Continue";
@@ -186,7 +210,13 @@ function resetToWaveOne() {
 function makeRandomGuess() {
     if (gameOver || isWaveClear) return;
 
-    const availableKeys = itemKeys.filter(key => !guessedItemsList.includes(key));
+    const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+    const vitacharged = typeof window.getVitachargedItems === "function" ? window.getVitachargedItems() : null;
+    const availableKeys = itemKeys.filter(key =>
+        !guessedItemsList.includes(key) &&
+        (!assassin || itemDatabase[key].name !== assassin.name) &&
+        (!vitacharged || !vitacharged.has(key))
+    );
     if (availableKeys.length === 0) return;
 
     const randomKey = availableKeys[Math.floor(Math.random() * availableKeys.length)];
@@ -199,9 +229,13 @@ window.makeRandomGuess = makeRandomGuess;
 function makeRandomWrongGuess() {
     if (gameOver || isWaveClear) return;
 
+    const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+    const vitacharged = typeof window.getVitachargedItems === "function" ? window.getVitachargedItems() : null;
     const availableKeys = itemKeys.filter(key =>
         !guessedItemsList.includes(key) &&
-        itemDatabase[key].name !== secretItem.name
+        itemDatabase[key].name !== secretItem.name &&
+        (!assassin || itemDatabase[key].name !== assassin.name) &&
+        (!vitacharged || !vitacharged.has(key))
     );
     if (availableKeys.length === 0) return;
 
@@ -240,8 +274,9 @@ window.handleAssassinGuess = function(assassinItem) {
     if (gameOver || isWaveClear) return;
 
     const messageElement = document.getElementById("gameMessage");
+    const displayWave = currentWave === 11 ? "Ultima" : currentWave;
     if (messageElement) {
-        messageElement.innerText = `Assassinated by ${assassinItem.name}, Target was ${secretItem.name}, you reached wave ${currentWave} before failing.`;
+        messageElement.innerText = `Assassinated by ${assassinItem.name}, Target was ${secretItem.name}, you reached wave ${displayWave} before failing.`;
         messageElement.style.color = "#ff3333";
     }
 
@@ -365,16 +400,16 @@ function submitGuess() {
         return td;
     }
 
-    function createNumericCell(guessedValue, targetValue, threshold, unitLabel, extraClass = "") {
+    function createNumericCell(guessedValue, targetValue, threshold, extraClass = "") {
         const td = document.createElement("td");
         if (extraClass) td.classList.add(extraClass);
 
         if (guessedValue === targetValue) {
-            td.innerText = `${guessedValue}`;
+            td.innerText = guessedValue;
             td.classList.add("cell-correct");
         } else {
             const arrow = guessedValue < targetValue ? " ↑" : " ↓";
-            td.innerText = `${guessedValue}${arrow}`;
+            td.innerText = guessedValue + arrow;
 
             const difference = Math.abs(guessedValue - targetValue);
             if (difference <= threshold) {
@@ -394,13 +429,10 @@ function submitGuess() {
         return td;
     }
 
-    const primaryLabel = isWeaponItem(guessedItem) ? "DMG" : "HP";
-    const secondaryLabel = isWeaponItem(guessedItem) ? "/s" : "s COOLDOWN";
-
     row.appendChild(createNameCell(guessedItem, secretItem));
     row.appendChild(createCell(guessedItem.type, secretItem.type, guessedItem.type, "cell-type"));
-    row.appendChild(createNumericCell(guessedItem.damage, secretItem.damage, 15, primaryLabel, "cell-damage"));
-    row.appendChild(createNumericCell(guessedItem.firerate, secretItem.firerate, 50, secondaryLabel, "cell-firerate"));
+    row.appendChild(createNumericCell(guessedItem.damage, secretItem.damage, 15, "cell-damage"));
+    row.appendChild(createNumericCell(guessedItem.firerate, secretItem.firerate, 50, "cell-firerate"));
     row.appendChild(createBooleanCell(guessedItem.hasSpecialAbility, secretItem.hasSpecialAbility, "cell-special"));
 
     if (typeof Modifiers !== "undefined") {
@@ -408,39 +440,52 @@ function submitGuess() {
     }
 
     if (tbody) tbody.insertBefore(row, tbody.firstChild);
+    inputElement.value = "";
+    if (dropdownMenu) dropdownMenu.style.display = "none";
 
     if (typeof Modifiers !== "undefined") {
         Modifiers.afterGuess();
     }
 
-    inputElement.value = "";
-    if (dropdownMenu) dropdownMenu.style.display = "none";
-
     if (guessedItem.name === secretItem.name) {
-        if (messageElement) {
-            const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
-            messageElement.innerText = `SUCCESS! The item was ${secretItem.name}! Wave ${currentWave} Complete!`;
-            if (assassin) {
-                messageElement.innerText += ` The assassin was ${assassin.name}.`;
-            }
-            messageElement.style.color = "#00ffcc";
-        }
         isWaveClear = true;
         inputElement.disabled = true;
         if (submitButton) submitButton.disabled = true;
 
-        if (continueButton) {
-            continueButton.innerText = "Continue";
-            continueButton.onclick = advanceNextWave;
-            continueButton.style.display = "inline-block";
+        const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
+
+        if (currentWave === 11) {
+            if (messageElement) {
+                messageElement.innerText = `GG!`;
+                messageElement.style.color = "#00ffcc";
+            }
+            if (continueButton) {
+                continueButton.innerText = "Play Again";
+                continueButton.onclick = resetToWaveOne;
+                continueButton.style.display = "inline-block";
+            }
+        } else {
+            if (messageElement) {
+                messageElement.innerText = `SUCCESS! The item was ${secretItem.name}! Wave ${currentWave} Complete!`;
+                if (assassin) {
+                    messageElement.innerText += ` The assassin was ${assassin.name}.`;
+                }
+                messageElement.style.color = "#00ffcc";
+            }
+            if (continueButton) {
+                continueButton.innerText = "Continue";
+                continueButton.onclick = advanceNextWave;
+                continueButton.style.display = "inline-block";
+            }
         }
         return;
     }
 
     if (guessCount >= MAX_GUESSES) {
+        const displayWave = currentWave === 11 ? "Ultima" : currentWave;
         if (messageElement) {
             const assassin = typeof window.getCurrentAssassin === "function" ? window.getCurrentAssassin() : null;
-            messageElement.innerText = `Out of guesses. Target was: ${secretItem.name}. You reached Wave ${currentWave} before failing.`;
+            messageElement.innerText = `Out of guesses. Target was: ${secretItem.name}. You reached Wave ${displayWave} before failing.`;
             if (assassin) {
                 messageElement.innerText += ` The assassin was ${assassin.name}.`;
             }

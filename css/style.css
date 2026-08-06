@@ -907,7 +907,24 @@ tr.row-vitacharged td.cell-name {
     text-shadow: 0 0 6px rgba(150, 150, 150, 0.3);
 }
 
+.item-mode .modifiers-container {
+    border-color: rgba(150, 150, 150, 0.4);
+    box-shadow: 0 0 15px rgba(150, 150, 150, 0.1);
+}
+
+.item-mode .modifiers-label {
+    color: #999999;
+    text-shadow: 0 0 6px rgba(150, 150, 150, 0.3);
+}
+
 .classic-mode .modifier-tag-none {
+    background: rgba(150, 150, 150, 0.15);
+    border: 1px solid #888888;
+    box-shadow: 0 0 8px rgba(150, 150, 150, 0.2);
+    animation: none;
+}
+
+.item-mode .modifier-tag-none {
     background: rgba(150, 150, 150, 0.15);
     border: 1px solid #888888;
     box-shadow: 0 0 8px rgba(150, 150, 150, 0.2);
