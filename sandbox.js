@@ -36,6 +36,12 @@ const itemDatabase = {
     "machete": { name: "Machete", type: "Melee", damage: 58, firerate: 0.5, hasSpecialAbility: true },
     "handaxes": { name: "Handaxes", type: "Melee", damage: 101, firerate: 0.5, hasSpecialAbility: true },
     "torqueblade": { name: "Torqueblade", type: "Melee", damage: 58, firerate: 0.5, hasSpecialAbility: true },
+    "ammo box": { name: "Ammo box", type: "Utility", damage: 0, firerate: 6, hasSpecialAbility: false },
+    "combat toolkit": { name: "Combat Toolkit", type: "Utility", damage: 0, firerate: 3, hasSpecialAbility: false },
+    "proxy": { name: "PROXY", type: "Utility", damage: 0, firerate: 4.2, hasSpecialAbility: false },
+    "defibrillator": { name: "Defibrillator", type: "Utility", damage: 0, firerate: 5, hasSpecialAbility: false },
+    "pacemaker": { name: "Pacemaker", type: "Utility", damage: 0, firerate: 2, hasSpecialAbility: false },
+    "resuscitator": { name: "Resuscitator", type: "Utility", damage: 0, firerate: 90, hasSpecialAbility: false },
     "jetpack": { name: "Jetpack", type: "Utility", damage: 0, firerate: 5.5, hasSpecialAbility: false },
     "terminal velocity": { name: "Terminal Velocity", type: "Utility", damage: 85, firerate: 2.25, hasSpecialAbility: true },
     "aerorig": { name: "Aerorig", type: "Utility", damage: 150, firerate: 10, hasSpecialAbility: false },
@@ -119,7 +125,7 @@ window.pickSecondTarget = function() {
     }
     const randomKey = pool[Math.floor(Math.random() * pool.length)];
     secretItem2 = itemDatabase[randomKey];
-    console.log(`Wave ${currentWave} second answer: ${secretItem2.name}`);
+    // console.log(`Wave ${currentWave} second answer: ${secretItem2.name}`);
 };
 
 window.pickThirdTarget = function() {
@@ -139,7 +145,7 @@ window.pickThirdTarget = function() {
     }
     const randomKey = pool[Math.floor(Math.random() * pool.length)];
     secretItem3 = itemDatabase[randomKey];
-    console.log(`Wave ${currentWave} third answer: ${secretItem3.name}`);
+    // console.log(`Wave ${currentWave} third answer: ${secretItem3.name}`);
 };
 
 window.clearSecondTarget = function() {
@@ -221,7 +227,7 @@ function initializeGameSession() {
     }
 
     secretItem = itemDatabase[itemKeys[Math.floor(Math.random() * itemKeys.length)]];
-    console.log(`Wave ${currentWave} answer: ${secretItem.name}`);
+    // console.log(`Wave ${currentWave} answer: ${secretItem.name}`);
     secretItem2 = null;
     secretItem3 = null;
     gameOver = false;
