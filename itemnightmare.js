@@ -98,23 +98,7 @@ window.getSecretItem = function() {
     return secretItem;
 };
 
-function loadItemRoster() {
-    try {
-        const stored = localStorage.getItem("sandboxItemRoster");
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed)) {
-                const filtered = parsed.filter(key => itemDatabase[key]);
-                if (filtered.length > 0) return filtered;
-            }
-        }
-    } catch (e) {
-        // fall through to the full roster
-    }
-    return Object.keys(itemDatabase);
-}
-
-let itemKeys = loadItemRoster();
+let itemKeys = Object.keys(itemDatabase);
 window.itemKeys = itemKeys;
 let secretItem;
 let secretItem2 = null;
@@ -287,7 +271,7 @@ function initializeGameSession() {
 
     if (typeof Modifiers !== "undefined") {
         Modifiers.currentWave = currentWave;
-        window.applySandboxModifiers();
+        window.applyItemNightmareModifiers();
     }
 }
 
@@ -550,32 +534,10 @@ window.addExtraGuessCount = function(n) {
     guessCount += n;
 };
 
-window.applySandboxModifiers = function() {
-    let config = { enabled: [], vitaraged: [], randomize: false };
-    try {
-        const stored = localStorage.getItem("sandboxModifierConfig");
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed.enabled)) config.enabled = parsed.enabled;
-            if (Array.isArray(parsed.vitaraged)) config.vitaraged = parsed.vitaraged;
-            if (typeof parsed.randomize === "boolean") config.randomize = parsed.randomize;
-        }
-    } catch (e) {
-        config = { enabled: [], vitaraged: [], randomize: false };
-    }
-
+window.applyItemNightmareModifiers = function() {
     if (typeof Modifiers === "undefined") return;
-
-    if (config.randomize) {
-        // Only draw from the modifiers the user selected, but let the engine
-        // pick how many appear and which ones, using the same wave-based
-        // formula and vitarage-forcing rule Classic mode uses.
-        Modifiers.allowedKeys = config.enabled;
-        Modifiers.evaluateWave(currentWave);
-    } else {
-        Modifiers.allowedKeys = null;
-        Modifiers.applyFixedModifiers(config.enabled, new Set(config.vitaraged));
-    }
+    Modifiers.allowedKeys = null;
+    Modifiers.evaluateWave(currentWave);
 };
 
 function tryUseExtraLife(reasonText) {
