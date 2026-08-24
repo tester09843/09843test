@@ -1075,7 +1075,6 @@ function submitGuess() {
                 const icon = document.createElement("span");
                 icon.className = "bounty-proximity-icon";
                 icon.innerText = correct ? "✅" : "🎯";
-                icon.title = correct ? `Correct bounty stat (${bountyEnemy.name})` : `Close to bounty (${bountyEnemy.name})`;
                 cell.appendChild(icon);
             });
         }
