@@ -1063,19 +1063,19 @@ function submitGuess() {
             const bi = lowerOrderForBounty.indexOf(bountyEnemy.encounter.toLowerCase());
 
             const bountyChecks = [
-                { cls: "cell-health", close: Math.abs(guessedEnemy.health - bountyEnemy.health) <= 50 },
-                { cls: "cell-waves", close: Math.abs(guessedEnemy.waves - bountyEnemy.waves) <= 6 },
-                { cls: "cell-encounter", close: gi !== -1 && bi !== -1 && Math.abs(gi - bi) <= 2 }
+                { cls: "cell-health", correct: guessedEnemy.health === bountyEnemy.health, close: Math.abs(guessedEnemy.health - bountyEnemy.health) <= 50 },
+                { cls: "cell-waves", correct: guessedEnemy.waves === bountyEnemy.waves, close: Math.abs(guessedEnemy.waves - bountyEnemy.waves) <= 6 },
+                { cls: "cell-encounter", correct: gi !== -1 && bi !== -1 && gi === bi, close: gi !== -1 && bi !== -1 && Math.abs(gi - bi) <= 2 }
             ];
 
-            bountyChecks.forEach(({ cls, close }) => {
+            bountyChecks.forEach(({ cls, correct, close }) => {
                 if (!close) return;
                 const cell = row.querySelector(`.${cls}`);
                 if (!cell) return;
                 const icon = document.createElement("span");
                 icon.className = "bounty-proximity-icon";
-                icon.innerText = "🎯";
-                icon.title = `Close to bounty (${bountyEnemy.name})`;
+                icon.innerText = correct ? "✅" : "🎯";
+                icon.title = correct ? `Correct bounty stat (${bountyEnemy.name})` : `Close to bounty (${bountyEnemy.name})`;
                 cell.appendChild(icon);
             });
         }
