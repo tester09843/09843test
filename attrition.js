@@ -311,6 +311,8 @@ function retireEnemy(key) {
     window.enemyKeys = activePool;
 }
 
+let skipNextBountyDecrement = false;
+
 function pickBounty() {
     if (activePool.length <= 1) { bountyKey = null; bountyWavesRemaining = 0; return; }
     const pool = activePool.filter(k => enemyDatabase[k].name !== secretEnemy.name);
@@ -320,6 +322,10 @@ function pickBounty() {
 }
 
 function advanceBounty() {
+    if (skipNextBountyDecrement) {
+        skipNextBountyDecrement = false;
+        return;
+    }
     if (bountyKey === null || !activePool.includes(bountyKey)) {
         pickBounty();
         return;
@@ -561,6 +567,7 @@ function restartRun() {
     bountyRewardWavesLeft = 0;
     bountyKey = null;
     bountyWavesRemaining = 0;
+    skipNextBountyDecrement = false;
     overchargerPending = false;
     clearOvercharger();
     updateRefillDisplay();
@@ -768,7 +775,7 @@ function triggerFail(message) {
         updatePoolDisplay();
         const messageElement = document.getElementById("gameMessage");
         if (messageElement) {
-            messageElement.innerText = `REVIVE USED! ${message} A revive absorbed the failure. (${revives} revive${revives !== 1 ? "s" : ""} left) Target was ${secretEnemy.name}.`;
+            messageElement.innerText = `REVIVE USED! ${message} A revive absorbed the failure. (${revives} revive${revives !== 1 ? "s" : ""} left)`;
             messageElement.style.color = "#33ff66";
         }
         isWaveClear = true;
@@ -1126,6 +1133,7 @@ function submitGuess() {
         addRunTime(60);
         bountyWavesRemaining = 0;
         pickBounty();
+        skipNextBountyDecrement = true;
         updateBountyIndicator();
         updateBountySwapIndicator();
         updatePoolDisplay();
