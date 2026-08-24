@@ -256,7 +256,19 @@ document.addEventListener("DOMContentLoaded", () => {
     initializeGameSession();
     startRunTimer();
     updateRunTimerDisplay();
+    updatePerksEmptyState();
 });
+
+function updatePerksEmptyState() {
+    const noneTag = document.getElementById("perksNone");
+    if (!noneTag) return;
+    const perkIds = ["reviveDisplay", "overchargerDisplay", "refillBtn", "resetTimerBtn"];
+    const anyVisible = perkIds.some(id => {
+        const el = document.getElementById(id);
+        return el && el.style.display !== "none" && el.style.display !== "";
+    });
+    noneTag.style.display = anyVisible ? "none" : "inline-block";
+}
 
 function updateResetDisplay() {
     const btn = document.getElementById('resetTimerBtn');
@@ -267,6 +279,7 @@ function updateResetDisplay() {
     } else {
         btn.style.display = 'none';
     }
+    updatePerksEmptyState();
 }
 
 function updateRefillDisplay() {
@@ -278,6 +291,7 @@ function updateRefillDisplay() {
     } else {
         btn.style.display = "none";
     }
+    updatePerksEmptyState();
 }
 
 function updatePoolDisplay() {
@@ -288,6 +302,7 @@ function updatePoolDisplay() {
         reviveDisplay.innerHTML = revives > 0 ? `<img class="perk-icon" src="images/icons/revive.png" alt=""> ${revives}` : "";
         reviveDisplay.style.display = revives > 0 ? "inline-block" : "none";
     }
+    updatePerksEmptyState();
 }
 
 function retireEnemy(key) {
@@ -392,6 +407,7 @@ function clearOvercharger() {
     overchargerTimeLeft = 0;
     const el = document.getElementById("overchargerDisplay");
     if (el) el.style.display = "none";
+    updatePerksEmptyState();
 }
 
 function startOvercharger() {
@@ -403,6 +419,7 @@ function startOvercharger() {
         el.innerHTML = `<img class="perk-icon" src="images/icons/overcharger.png" alt=""><span id="overchargerTimeText">Overcharger: ${overchargerTimeLeft}s</span>`;
         el.style.display = "inline-block";
     }
+    updatePerksEmptyState();
     overchargerTimer = setInterval(() => {
         overchargerTimeLeft--;
         const textEl = document.getElementById("overchargerTimeText");
@@ -440,9 +457,9 @@ function initializeGameSession() {
     guessedEnemiesList = [];
 
     advanceBounty();
-    const bountyName = bountyKey && isBountyWave() ? enemyDatabase[bountyKey].name : (bountyKey ? enemyDatabase[bountyKey].name + ' (not the target)' : 'none');
+    const bountyName = bountyKey && isBountyWave() ? enemyDatabase[bountyKey].name : (bountyKey ? enemyDatabase[bountyKey].name : 'none');
     console.log(`Target: ${secretEnemy.name}`);
-    console.log(`Bounty: ${bountyName} | Swap in: ${bountyWavesRemaining}`);
+    console.log(`Bounty: ${bountyName}`);
 
     if (waveIndicator) waveIndicator.innerText = `Wave: ${currentWave}`;
 
@@ -536,6 +553,7 @@ function restartRun() {
     currentWave = 1;
     revives = 0;
     refillCharges = 0;
+    resetCharges = 0;
     runTimerSeconds = 5 * 60;
     waveGuessHistory = {};
     guessDeltaMap = {};
@@ -547,10 +565,12 @@ function restartRun() {
     clearOvercharger();
     updateRefillDisplay();
     updateResetDisplay();
+    updatePoolDisplay();
     stopRunTimer();
     initializeGameSession();
     startRunTimer();
     updateRunTimerDisplay();
+    updatePerksEmptyState();
 }
 
 window.setMaxGuesses = function(n) { MAX_GUESSES = n; };
