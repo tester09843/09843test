@@ -547,9 +547,15 @@ function showEndScreen() {
     }
 }
 
+let skipNextBountyRewardDecrement = false;
+
 function advanceNextWave() {
-    if (bountyRewardWavesLeft > 0) bountyRewardWavesLeft--;
-    if (bountyRewardWavesLeft === 0) bountyRewardModifier = null;
+    if (skipNextBountyRewardDecrement) {
+        skipNextBountyRewardDecrement = false;
+    } else {
+        if (bountyRewardWavesLeft > 0) bountyRewardWavesLeft--;
+        if (bountyRewardWavesLeft === 0) bountyRewardModifier = null;
+    }
     currentWave++;
     initializeGameSession();
 }
@@ -565,6 +571,7 @@ function restartRun() {
     guessDeltaMap = {};
     bountyRewardModifier = null;
     bountyRewardWavesLeft = 0;
+    skipNextBountyRewardDecrement = false;
     bountyKey = null;
     bountyWavesRemaining = 0;
     skipNextBountyDecrement = false;
@@ -810,30 +817,52 @@ function triggerFail(message) {
 function applyAimAssist(originalKey) {
     if (typeof Modifiers === "undefined" || !Modifiers.active.has("aimAssist")) return originalKey;
     const guessedEnemy = enemyDatabase[originalKey];
-    if (!guessedEnemy || guessedEnemy.name === secretEnemy.name) return originalKey;
+    if (!guessedEnemy) return originalKey;
 
-    const healthPartial = guessedEnemy.health !== secretEnemy.health && Math.abs(guessedEnemy.health - secretEnemy.health) <= 50;
-    const wavesPartial = guessedEnemy.waves !== secretEnemy.waves && Math.abs(guessedEnemy.waves - secretEnemy.waves) <= 6;
+    const se2 = typeof window.getSecondSecretEnemy === "function" ? window.getSecondSecretEnemy() : null;
+    const se3 = typeof window.getThirdSecretEnemy === "function" ? window.getThirdSecretEnemy() : null;
+    const doubleTroubleActive = Modifiers.active.has("doubleTrouble") && !!se2;
+    const targets = doubleTroubleActive ? [secretEnemy, se2, ...(se3 ? [se3] : [])] : [secretEnemy];
+
+    // If the guess is already an exact match for any active target, never touch it.
+    if (targets.some(t => t && guessedEnemy.name === t.name)) return originalKey;
+
     const lowerOrder = encounterOrder.map(i => i.toLowerCase());
     const gi = lowerOrder.indexOf(guessedEnemy.encounter.toLowerCase());
-    const si = lowerOrder.indexOf(secretEnemy.encounter.toLowerCase());
-    const encounterPartial = guessedEnemy.encounter.toLowerCase() !== secretEnemy.encounter.toLowerCase() &&
-        gi !== -1 && si !== -1 && Math.abs(gi - si) <= 2;
 
-    if (!healthPartial && !wavesPartial && !encounterPartial) return originalKey;
+    let target = null;
+    let healthPartial = false, wavesPartial = false, encounterPartial = false;
+    for (const t of targets) {
+        if (!t) continue;
+        const hp = guessedEnemy.health !== t.health && Math.abs(guessedEnemy.health - t.health) <= 50;
+        const wp = guessedEnemy.waves !== t.waves && Math.abs(guessedEnemy.waves - t.waves) <= 6;
+        const ti = lowerOrder.indexOf(t.encounter.toLowerCase());
+        const ep = guessedEnemy.encounter.toLowerCase() !== t.encounter.toLowerCase() &&
+            gi !== -1 && ti !== -1 && Math.abs(gi - ti) <= 2;
+        if (hp || wp || ep) {
+            target = t;
+            healthPartial = hp;
+            wavesPartial = wp;
+            encounterPartial = ep;
+            break;
+        }
+    }
+
+    if (!target) return originalKey;
 
     if (Modifiers.isBuffed("aimAssist")) {
-        const secretKey = activePool.find(key => enemyDatabase[key].name === secretEnemy.name);
-        return secretKey || originalKey;
+        const targetKey = activePool.find(key => enemyDatabase[key].name === target.name);
+        return targetKey || originalKey;
     }
 
     const candidates = activePool.filter(key => {
         if (guessedEnemiesList.includes(key)) return false;
         const enemy = enemyDatabase[key];
         if (enemy.name === guessedEnemy.name) return false;
-        return (healthPartial && enemy.health === secretEnemy.health) ||
-            (wavesPartial && enemy.waves === secretEnemy.waves) ||
-            (encounterPartial && enemy.encounter.toLowerCase() === secretEnemy.encounter.toLowerCase());
+        if (targets.some(t => t && enemy.name === t.name && t !== target)) return false;
+        return (healthPartial && enemy.health === target.health) ||
+            (wavesPartial && enemy.waves === target.waves) ||
+            (encounterPartial && enemy.encounter.toLowerCase() === target.encounter.toLowerCase());
     });
     if (candidates.length === 0) return originalKey;
     return candidates[Math.floor(Math.random() * candidates.length)];
@@ -887,6 +916,8 @@ function submitGuess() {
     }
 
     if (messageElement) messageElement.innerText = "";
+
+    guessName = applyAimAssist(guessName);
 
     if (!overchargerActive) guessCount++;
     bountyGuessCount++;
@@ -1115,6 +1146,7 @@ function submitGuess() {
             if (available.length > 0) {
                 bountyRewardModifier = available[Math.floor(Math.random() * available.length)];
                 bountyRewardWavesLeft = 3;
+                skipNextBountyRewardDecrement = true;
                 const def = Modifiers.definitions[bountyRewardModifier];
                 rewardName = `${typeof def.name === "function" ? def.name(false) : def.name} for the next 3 waves`;
             }
