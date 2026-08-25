@@ -816,6 +816,7 @@ function triggerFail(message) {
 
 function applyAimAssist(originalKey) {
     if (typeof Modifiers === "undefined" || !Modifiers.active.has("aimAssist")) return originalKey;
+    if (bountyKey && originalKey === bountyKey) return originalKey;
     const guessedEnemy = enemyDatabase[originalKey];
     if (!guessedEnemy) return originalKey;
 
@@ -1160,7 +1161,7 @@ function submitGuess() {
         } else {
             resetCharges++;
             updateResetDisplay();
-            rewardName = "Reset charge — click the timer to restore it to 5:00 whenever you want";
+            rewardName = "Reset timer charge — click the timer to restore it to 5:00 whenever you want";
         }
         addRunTime(60);
         bountyWavesRemaining = 0;
@@ -1170,7 +1171,7 @@ function submitGuess() {
         updateBountySwapIndicator();
         updatePoolDisplay();
         if (messageElement) {
-            let msg = `🎯 Bounty found (${foundBountyName})! Reward: ${rewardName}.`;
+            let msg = `🎯 Bounty found! Reward: ${rewardName}.`;
             msg += ` Auto-advancing.`;
             messageElement.innerText = msg;
             messageElement.style.color = "#ffe44d";

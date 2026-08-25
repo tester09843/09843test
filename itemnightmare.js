@@ -775,7 +775,18 @@ function submitGuess() {
         if (guessedItem.name === targetItem.name) {
             td.classList.add("cell-correct");
         } else {
-            td.classList.add("cell-incorrect");
+            const guessedLower = guessedItem.name.toLowerCase();
+            const targetLower = targetItem.name.toLowerCase();
+            const targetIsOld = targetLower.includes("(old)");
+            const targetIsOldMethod = targetLower.includes("(old method)");
+            const guessIsOld = guessedLower.includes("(old)");
+            const guessIsOldMethod = guessedLower.includes("(old method)");
+            const guessIsOldModel = guessedLower.includes("(old model)");
+
+            const isFamilyMatch = (targetIsOld && guessIsOld) ||
+                (targetIsOldMethod && (guessIsOldMethod || guessIsOldModel));
+
+            td.classList.add(isFamilyMatch ? "cell-partial" : "cell-incorrect");
         }
         return td;
     }
